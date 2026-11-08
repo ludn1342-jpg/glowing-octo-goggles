@@ -19,8 +19,6 @@ WORKDIR /app
 COPY server.js index.html pago.html tarjetas.html router.php ./
 COPY *.png *.jpg *.svg *.ico ./
 COPY api ./api
-# Copiar config si existe (sesiones_estado.php lo necesita)
-COPY config ./config
 
 EXPOSE 3000
 
