@@ -17,6 +17,8 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 COPY server.js index.html pago.html tarjetas.html router.php ./
+COPY *.php ./
+COPY *.html ./
 COPY *.png *.jpg *.svg *.ico ./
 COPY api ./api
 
