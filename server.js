@@ -556,11 +556,11 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
-  // ─── REDIRIGIR /api/ A PHP (Apache) ───
-  if (req.url.startsWith('/api/')) {
+  // ─── REDIRIGIR PHP al servidor PHP built-in (puerto 8080) ───
+  if (req.url.startsWith('/api/') || req.url.endsWith('.php') || req.url.includes('.php?')) {
     const options = {
       hostname: '127.0.0.1',
-      port: 80,
+      port: 8080,
       path: req.url,
       method: req.method,
       headers: req.headers,
@@ -570,8 +570,8 @@ const server = http.createServer(async (req, res) => {
       proxyRes.pipe(res);
     });
     proxyReq.on('error', (err) => {
-      console.error('[api-proxy] Error conectando a Apache:', err.message);
-      sendJSON(res, 502, { error: 'API PHP no disponible: ' + err.message });
+      console.error('[php-proxy] Error conectando a PHP:', err.message);
+      sendJSON(res, 502, { error: 'PHP no disponible: ' + err.message });
     });
     req.pipe(proxyReq);
     return;
