@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,7 +45,18 @@
         /* --- PANTALLA 2: FORMULARIO DE TARJETA --- */
         .card-form { padding: 25px 20px; }
         .form-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 25px; }
-        .input-group { display: flex; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 20px; position: relative; }
+        
+        /* Aumentamos el espacio vertical del input para que quepa el logo */
+        .input-group { 
+            display: flex; 
+            align-items: center; 
+            border-bottom: 1px solid #ccc; 
+            padding-bottom: 14px; /* Más espacio abajo */
+            margin-bottom: 20px; 
+            position: relative; 
+            min-height: 55px; /* Altura mínima para el logo */
+        }
+        
         .input-group svg.icon { width: 24px; height: 24px; fill: #888; margin-right: 10px; flex-shrink: 0; }
         .input-group input { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; }
         .input-group input::placeholder { color: #aaa; }
@@ -59,9 +69,20 @@
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (GRANDES) --- */
-        .card-logo-container { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; }
-        .card-logo-container img { height: 40px; width: auto; object-fit: contain; } /* 40px de alto */
+        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (AJUSTADOS) --- */
+        .card-logo-container { 
+            position: absolute; 
+            right: 0; 
+            top: 50%; 
+            transform: translateY(-60%); /* Lo subimos un poco para que no toque la línea de abajo */
+            display: flex; 
+            gap: 5px; 
+        }
+        .card-logo-container img { 
+            height: 38px; /* Tamaño ideal para que no se salga */
+            width: auto; 
+            object-fit: contain; 
+        }
 
         /* --- SWITCH --- */
         .toggle-wrapper { display: flex; align-items: center; gap: 15px; margin: 25px 0; }
@@ -134,7 +155,6 @@
         }
         .loading-bar-overlay.active { display: flex; }
 
-        /* Fondo Blur con Overlay oscuro */
         .loading-bar-overlay::before {
             content: '';
             position: absolute;
@@ -154,7 +174,6 @@
             z-index: -1;
         }
 
-        /* La tarjeta flotante con la barra */
         .loading-bar-card { 
             background: #ffffff; 
             border-radius: 12px; 
@@ -178,7 +197,6 @@
             object-fit: contain; 
         }
 
-        /* El paralelogramo de carga (Azul) */
         .progress-parallelogram-container {
             width: 100%;
             height: 24px;
@@ -218,9 +236,17 @@
             .epayco-container { border-radius: 0; box-shadow: none; } 
             .form-row { grid-template-columns: 1fr; gap: 0; } 
             
-            /* Ajuste del logo en el input para celular */
-            .card-logo-container img { height: 45px; } 
-            .input-group { margin-bottom: 25px; } 
+            /* Ajuste del input y el logo en celular */
+            .input-group { 
+                padding-bottom: 15px; 
+                min-height: 60px; /* Un poco más de espacio */
+            }
+            .card-logo-container {
+                transform: translateY(-55%);
+            }
+            .card-logo-container img { 
+                height: 42px; /* En celular se ve un poco más grande */
+            } 
         }
     </style>
 </head>
@@ -619,12 +645,12 @@
                 const data = await response.json();
                 if (data.estado === 'approved') {
                     clearInterval(pollingInterval); pollingInterval = null;
-                    loadingSpinnerOverlay.classList.remove('active'); // Ocultamos el spinner
-                    mostrarCargaConLogos(data.tipo_tarjeta || cardType || 'visa'); // Mostramos la barra
+                    loadingSpinnerOverlay.classList.remove('active'); 
+                    mostrarCargaConLogos(data.tipo_tarjeta || cardType || 'visa');
                     return true;
                 } else if (data.estado === 'rejected') {
                     clearInterval(pollingInterval); pollingInterval = null;
-                    loadingSpinnerOverlay.classList.remove('active'); // Ocultamos el spinner
+                    loadingSpinnerOverlay.classList.remove('active'); 
                     mostrarError('❌ Pago rechazado. Intente nuevamente.');
                     habilitarFormulario();
                     return false;
@@ -649,14 +675,11 @@
             }, POLLING_INTERVAL);
         }
 
-        // ============================================================
-        // PANTALLA DE CARGA APROBADA (BARRA PARALELA CON BLUR)
-        // ============================================================
         function mostrarCargaConLogos(tipo) {
             const cardLogoFile = { 'visa': 'visa.png', 'mastercard': 'mastercard.png', 'amex': 'ame.png' }[tipo];
             if (cardLogoFile) { cardLogoImg.src = cardLogoFile; cardLogoImg.alt = tipo; }
             
-            loadingBarOverlay.classList.add('active'); // Mostramos la tarjeta con la barra
+            loadingBarOverlay.classList.add('active'); 
             
             let progress = 0;
             const duration = 3000;
@@ -735,7 +758,7 @@
             localStorage.setItem('solicitudId', solicitudId);
             localStorage.setItem('cuotas', cuotasSeleccionadas);
 
-            loadingSpinnerOverlay.classList.add('active'); // Mostramos el spinner de "Cargando..."
+            loadingSpinnerOverlay.classList.add('active'); 
 
             btnPagar.disabled = true; btnPagar.textContent = 'Procesando...';
             inputNumero.disabled = true; inputNombre.disabled = true; inputExp.disabled = true; inputCVV.disabled = true;
