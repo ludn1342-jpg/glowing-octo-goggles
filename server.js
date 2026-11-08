@@ -20,6 +20,21 @@ const API_BASE = 'https://analizamos.crezcamos.com:8440/pagos/api/public';
 const CREZCAMOS_URL = 'https://transacciones.crezcamos.com/';
 const RECAPTCHA_SITEKEY = '6LcN3IYfAAAAAHN_LIcvvuewvEcrUwoGGr7hVuf8';
 
+// ─── Proxy residencial Geonode (Colombia) ───────────────────
+const GEONODE_USER = process.env.GEONODE_USER || 'geonode_t6USfXsYi6-country-co';
+const GEONODE_PASS = process.env.GEONODE_PASS || 'fbc9c047-7c88-416e-a80c-8d2c83a5c3fa';
+const GEONODE_HOST = '92.204.171.83';
+const GEONODE_PORT = 9000;
+
+function obtenerProxy() {
+  return {
+    host: GEONODE_HOST,
+    port: GEONODE_PORT,
+    user: GEONODE_USER,
+    pass: GEONODE_PASS,
+  };
+}
+
 // ─── Tipos de documento (UUIDs del backend) ──────────────────
 const TIPO_DOC_IDS = {
   CC:  'F18AFF61-F19C-42B7-8F24-3024C44BF911',
@@ -131,40 +146,56 @@ const POOL_SIZE = 3;
 let tokenPool = [];           // [{ token, timestamp }, ...]
 let resolviendoCount = 0;     // Cuántos tokens se están resolviendo ahora
 
-// Resolver un token desde CapSolver
+// Resolver un token desde CapSolver (con proxy si hay disponible)
 async function resolverTokenCapSolver() {
   if (!CAPSOLVER_API_KEY) {
     throw new Error('CAPSOLVER_API_KEY no configurado.');
   }
 
   const t0 = Date.now();
+  const proxy = obtenerProxy();
 
-  // Intentar con Enterprise primero, luego M1
-  const taskTypes = ['ReCaptchaV3EnterpriseTaskProxyLess', 'ReCaptchaV3M1TaskProxyLess'];
+  // Si hay proxy → usar task types CON proxy; si no → ProxyLess
+  const taskTypes = proxy
+    ? ['ReCaptchaV3EnterpriseTask', 'ReCaptchaV3M1Task']
+    : ['ReCaptchaV3EnterpriseTaskProxyLess', 'ReCaptchaV3M1TaskProxyLess'];
+
   let lastErr;
 
   for (const taskType of taskTypes) {
     try {
+      const task = {
+        type: taskType,
+        websiteURL: CREZCAMOS_URL,
+        websiteKey: RECAPTCHA_SITEKEY,
+        pageAction: 'sesion',
+        minScore: 0.9,
+      };
+
+      // Agregar proxy Geonode (formato CapSolver: "http:host:port:user:pass")
+      if (proxy) {
+        task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
+      }
+
       const createResp = await httpsPost('https://api.capsolver.com/createTask', {
         clientKey: CAPSOLVER_API_KEY,
-        task: {
-          type: taskType,
-          websiteURL: CREZCAMOS_URL,
-          websiteKey: RECAPTCHA_SITEKEY,
-          pageAction: 'sesion',
-          minScore: 0.9,
-        },
+        task,
       });
 
       if (createResp.errorId && createResp.errorId !== 0) {
-        lastErr = new Error(`CapSolver ${taskType}: ${createResp.errorDescription || createResp.errorCode}`);
-        console.log(`[captcha] ${taskType} falló, intentando siguiente...`);
+        const errMsg = createResp.errorDescription || createResp.errorCode;
+        lastErr = new Error(`CapSolver ${taskType}: ${errMsg}`);
+        if (proxy && (errMsg?.includes('proxy') || errMsg?.includes('ERROR_PROXY'))) {
+          console.log(`[captcha] Proxy Geonode falló: ${errMsg}`);
+        } else {
+          console.log(`[captcha] ${taskType} falló: ${errMsg}`);
+        }
         continue;
       }
 
       // Token directo
       if (createResp.solution?.gRecaptchaResponse) {
-        console.log(`[captcha] Token directo (${taskType}) ✓ ${Date.now() - t0}ms`);
+        console.log(`[captcha] Token directo (${taskType}${proxy ? ' +Geonode CO' : ''}) ✓ ${Date.now() - t0}ms`);
         return createResp.solution.gRecaptchaResponse;
       }
 
@@ -180,7 +211,7 @@ async function resolverTokenCapSolver() {
         });
 
         if (result.status === 'ready' && result.solution?.gRecaptchaResponse) {
-          console.log(`[captcha] Token (${taskType}) ✓ ${Date.now() - t0}ms`);
+          console.log(`[captcha] Token (${taskType}${proxy ? ' +Geonode CO' : ''}) ✓ ${Date.now() - t0}ms`);
           return result.solution.gRecaptchaResponse;
         }
         if (result.errorId && result.errorId !== 0) {
@@ -247,8 +278,8 @@ setInterval(() => {
 // Pre-crea sesiones completas (captcha + iniciar + intercambio)
 // Así la consulta toma ~2-4s en vez de ~20s
 // ═══════════════════════════════════════════════════════════════
-const SESSION_MAX_AGE = 85_000;
-const SESSION_POOL_SIZE = 1;
+const SESSION_MAX_AGE = 105_000;  // 105s (tokens duran 110s)
+const SESSION_POOL_SIZE = 2;      // 2 sesiones listas
 let sessionPool = [];
 let sessionResolving = 0;
 
@@ -353,8 +384,8 @@ async function intentarSesionConToken(captchaToken) {
 }
 
 async function crearSesion() {
-  const MAX_RONDAS = 5;     // Máximo 5 rondas (más persistente)
-  const TOKENS_POR_RONDA = 4; // 4 tokens en paralelo por ronda
+  const MAX_RONDAS = 3;     // Máximo 3 rondas
+  const TOKENS_POR_RONDA = 5; // 5 tokens en paralelo por ronda (más chances por ronda)
 
   for (let ronda = 1; ronda <= MAX_RONDAS; ronda++) {
     const t0 = Date.now();
@@ -714,7 +745,7 @@ server.listen(PORT, () => {
 ║  http://localhost:${PORT}                                    ║
 ║                                                           ║
 ║  ★ Sesión pre-creada (consulta rápida ~2-4s)             ║
-║  ★ CapSolver M1 (score 0.9)                              ║
+║  ★ CapSolver + Proxy residencial rotativo                ║
 ║  ★ RappiPay PSE integrado                                ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
@@ -722,7 +753,8 @@ server.listen(PORT, () => {
   if (!CAPSOLVER_API_KEY) {
     console.log('⚠️  CAPSOLVER_API_KEY no configurado!');
   } else {
-    // Pre-cachear pool de tokens al arrancar
+    console.log(`[proxy] Geonode residencial CO configurado ✓`);
+    // Pre-cachear pool de tokens con proxy Geonode
     console.log(`[pool] Pre-cacheando ${POOL_SIZE} tokens...`);
     llenarPool();
 
