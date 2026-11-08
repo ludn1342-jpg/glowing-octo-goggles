@@ -1,4 +1,3 @@
-
 <?php require_once __DIR__ . '/_guard.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -52,7 +51,7 @@
             align-items: center; 
             justify-content: space-between; 
             margin-bottom: 35px; 
-            min-height: 80px; /* Aumentado para dar espacio a los logos grandes */
+            min-height: 100px; /* Aumentado para dar espacio a los logos grandes */
         }
         
         /* Logo del banco (Izquierda) */
@@ -60,20 +59,20 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-start;
-            height: 70px; /* Logos grandes en PC */
+            height: 90px; /* Forzamos muchísima altura en PC */
         }
         .bank-logo img { 
             height: 100%; 
             width: auto; 
-            max-width: 180px; 
+            max-width: 220px; /* Le damos más ancho */
             object-fit: contain; 
             display: none; 
         }
         
         .bank-icon-placeholder {
             display: none;
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
         }
         
         /* Logo MasterCard (Derecha) */
@@ -81,11 +80,12 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-end;
-            height: 70px; /* Logos grandes en PC */
+            height: 90px; /* Forzamos muchísima altura en PC */
         }
         .mc-logo img { 
             height: 100%; 
             width: auto; 
+            max-width: 200px; /* Le damos más ancho */
             object-fit: contain; 
         }
 
@@ -297,21 +297,26 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        /* Responsive para móviles (Logos también grandes) */
+        /* Responsive para móviles (Logos también gigantes) */
         @media (max-width: 480px) { 
             .modal-container { padding: 30px 20px; } 
             .form-title { font-size: 1.35rem; } 
             .form-input { padding: 14px; font-size: 1rem; }
             
             .header {
-                min-height: 70px;
+                min-height: 80px;
                 margin-bottom: 25px;
             }
             .bank-logo {
-                height: 60px; 
+                height: 70px; /* En celular también se ven enormes */
+                max-width: 50%;
             }
             .mc-logo {
-                height: 60px; 
+                height: 70px; /* En celular también se ven enormes */
+                max-width: 50%;
+            }
+            .bank-logo img, .mc-logo img {
+                max-width: 100%; /* Obliga a la imagen a ocupar todo el espacio disponible */
             }
         }
     </style>
