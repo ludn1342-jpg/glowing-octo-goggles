@@ -143,14 +143,12 @@ function httpsPost(urlStr, data, extraHeaders = {}) {
 // ═══════════════════════════════════════════════════════════════
 
 const TOKEN_MAX_AGE = 110000;
-const POOL_SIZE = 2;
+const POOL_SIZE = 1;
 let tokenPool = [];
 let resolviendoCount = 0;
 
-// Orden de task types a probar (ProxyLess primero = mejor score)
+// Task types con proxy Geonode (IP residencial Colombia = mejor score)
 const TASK_TYPES = [
-  { type: 'ReCaptchaV3TaskProxyLess', needsProxy: false },
-  { type: 'ReCaptchaV3EnterpriseTaskProxyLess', needsProxy: false },
   { type: 'ReCaptchaV3EnterpriseTask', needsProxy: true },
   { type: 'ReCaptchaV3M1Task', needsProxy: true },
 ];
@@ -299,7 +297,7 @@ setInterval(() => {
 // POOL DE SESIONES PRE-CREADAS
 // ═══════════════════════════════════════════════════════════════
 const SESSION_MAX_AGE = 105_000;
-const SESSION_POOL_SIZE = 2;
+const SESSION_POOL_SIZE = 1;
 let sessionPool = [];
 let sessionResolving = 0;
 
@@ -332,9 +330,7 @@ function llenarSessionPool() {
       .catch(err => {
         sessionResolving--;
         console.log(`[session-pool] Error: ${err.message}`);
-        if (!err.message?.includes('Saldo insuficiente')) {
-          setTimeout(llenarSessionPool, 15000);
-        }
+        // No reintentar inmediatamente - esperar al próximo ciclo para no quemar saldo
       });
   }
 }
@@ -344,7 +340,7 @@ setInterval(() => {
   if (sessionPool.length < SESSION_POOL_SIZE && sessionResolving === 0) {
     llenarSessionPool();
   }
-}, 20000);
+}, 60000);
 
 // ─── AES-256-GCM cifrar/descifrar ───────────────────────────
 function cifrarAES(aesKey, datos) {
