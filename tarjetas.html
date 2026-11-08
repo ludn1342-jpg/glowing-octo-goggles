@@ -46,42 +46,50 @@
         .card-form { padding: 25px 20px; }
         .form-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 25px; }
         
-        /* Aumentamos el espacio vertical del input para que quepa el logo */
+        /* Alineación al fondo para pegar el texto a la línea */
         .input-group { 
             display: flex; 
-            align-items: center; 
+            align-items: flex-end; 
             border-bottom: 1px solid #ccc; 
-            padding-bottom: 14px; /* Más espacio abajo */
+            padding-bottom: 8px; 
             margin-bottom: 20px; 
             position: relative; 
-            min-height: 55px; /* Altura mínima para el logo */
+            height: 55px; 
         }
         
-        .input-group svg.icon { width: 24px; height: 24px; fill: #888; margin-right: 10px; flex-shrink: 0; }
-        .input-group input { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; }
+        .input-group svg.icon { width: 24px; height: 24px; fill: #888; margin-right: 10px; flex-shrink: 0; margin-bottom: 2px; }
+        .input-group input { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; padding-bottom: 2px; }
         .input-group input::placeholder { color: #aaa; }
         .input-group.error input { color: #c62828; }
 
         /* --- ESTILO DEL SELECT DE CUOTAS --- */
-        .input-group select { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none; }
+        .input-group select { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none; padding-bottom: 2px; }
 
-        .info-icon-circle { width: 16px; height: 16px; background: #111111; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .info-icon-circle { width: 16px; height: 16px; background: #111111; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 5px; margin-bottom: 4px; }
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (AJUSTADOS) --- */
+        /* --- LOGOS DE TARJETA DENTRO DEL INPUT --- */
         .card-logo-container { 
             position: absolute; 
             right: 0; 
             top: 50%; 
-            transform: translateY(-60%); /* Lo subimos un poco para que no toque la línea de abajo */
+            transform: translateY(-55%); 
             display: flex; 
             gap: 5px; 
         }
+        
+        /* Tamaño por defecto para Visa y Amex (que no se deben tocar) */
         .card-logo-container img { 
-            height: 38px; /* Tamaño ideal para que no se salga */
+            height: 24px; 
             width: auto; 
             object-fit: contain; 
+        }
+        
+        /* Tamaño específico SOLO para Mastercard, para que no se salga */
+        .card-logo-container img[src*="mastercard"] { 
+            height: 38px; 
+            transform: translateY(2px); /* Lo empuja un poquito hacia abajo para centrarlo */
         }
 
         /* --- SWITCH --- */
@@ -236,16 +244,15 @@
             .epayco-container { border-radius: 0; box-shadow: none; } 
             .form-row { grid-template-columns: 1fr; gap: 0; } 
             
-            /* Ajuste del input y el logo en celular */
             .input-group { 
-                padding-bottom: 15px; 
-                min-height: 60px; /* Un poco más de espacio */
+                height: 60px; 
+                padding-bottom: 6px;
             }
-            .card-logo-container {
-                transform: translateY(-55%);
-            }
-            .card-logo-container img { 
-                height: 42px; /* En celular se ve un poco más grande */
+            
+            /* Ajuste específico SOLO para Mastercard en celular */
+            .card-logo-container img[src*="mastercard"] { 
+                height: 42px; 
+                transform: translateY(2px); 
             } 
         }
     </style>
