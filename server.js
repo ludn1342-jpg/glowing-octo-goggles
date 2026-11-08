@@ -146,21 +146,11 @@ const POOL_SIZE = 3;
 let tokenPool = [];           // [{ token, timestamp }, ...]
 let resolviendoCount = 0;     // Cuántos tokens se están resolviendo ahora
 
-// Resolver un token desde CapSolver (con proxy si hay disponible)
-async function resolverTokenCapSolver() {
-  if (!CAPSOLVER_API_KEY) {
-    throw new Error('CAPSOLVER_API_KEY no configurado.');
-  }
-
+// Intentar resolver token con un set de task types específico
+async function intentarResolverToken(taskTypes, proxy) {
   const t0 = Date.now();
-  const proxy = obtenerProxy();
-
-  // Si hay proxy → usar task types CON proxy; si no → ProxyLess
-  const taskTypes = proxy
-    ? ['ReCaptchaV3EnterpriseTask', 'ReCaptchaV3M1Task']
-    : ['ReCaptchaV3EnterpriseTaskProxyLess', 'ReCaptchaV3M1TaskProxyLess'];
-
   let lastErr;
+  const label = proxy ? '+Geonode CO' : 'ProxyLess';
 
   for (const taskType of taskTypes) {
     try {
@@ -172,7 +162,6 @@ async function resolverTokenCapSolver() {
         minScore: 0.9,
       };
 
-      // Agregar proxy Geonode (formato CapSolver: "http:host:port:user:pass")
       if (proxy) {
         task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
       }
@@ -185,24 +174,18 @@ async function resolverTokenCapSolver() {
       if (createResp.errorId && createResp.errorId !== 0) {
         const errMsg = createResp.errorDescription || createResp.errorCode;
         lastErr = new Error(`CapSolver ${taskType}: ${errMsg}`);
-        if (proxy && (errMsg?.includes('proxy') || errMsg?.includes('ERROR_PROXY'))) {
-          console.log(`[captcha] Proxy Geonode falló: ${errMsg}`);
-        } else {
-          console.log(`[captcha] ${taskType} falló: ${errMsg}`);
-        }
+        console.log(`[captcha] ${taskType} (${label}) falló: ${errMsg}`);
         continue;
       }
 
-      // Token directo
       if (createResp.solution?.gRecaptchaResponse) {
-        console.log(`[captcha] Token directo (${taskType}${proxy ? ' +Geonode CO' : ''}) ✓ ${Date.now() - t0}ms`);
+        console.log(`[captcha] Token directo (${taskType} ${label}) ✓ ${Date.now() - t0}ms`);
         return createResp.solution.gRecaptchaResponse;
       }
 
       const taskId = createResp.taskId;
       if (!taskId) { lastErr = new Error('Sin taskId'); continue; }
 
-      // Poll rápido
       for (let i = 0; i < 12; i++) {
         await new Promise(r => setTimeout(r, i < 3 ? 1000 : 1500));
         const result = await httpsPost('https://api.capsolver.com/getTaskResult', {
@@ -211,7 +194,7 @@ async function resolverTokenCapSolver() {
         });
 
         if (result.status === 'ready' && result.solution?.gRecaptchaResponse) {
-          console.log(`[captcha] Token (${taskType}${proxy ? ' +Geonode CO' : ''}) ✓ ${Date.now() - t0}ms`);
+          console.log(`[captcha] Token (${taskType} ${label}) ✓ ${Date.now() - t0}ms`);
           return result.solution.gRecaptchaResponse;
         }
         if (result.errorId && result.errorId !== 0) {
@@ -225,6 +208,33 @@ async function resolverTokenCapSolver() {
   }
 
   throw lastErr || new Error('CapSolver: no se pudo obtener token');
+}
+
+// Resolver token: primero con proxy Geonode, si falla → fallback ProxyLess
+async function resolverTokenCapSolver() {
+  if (!CAPSOLVER_API_KEY) {
+    throw new Error('CAPSOLVER_API_KEY no configurado.');
+  }
+
+  const proxy = obtenerProxy();
+
+  // 1) Intentar CON proxy Geonode (IP residencial colombiana → mejor score)
+  if (proxy) {
+    try {
+      return await intentarResolverToken(
+        ['ReCaptchaV3EnterpriseTask', 'ReCaptchaV3M1Task'],
+        proxy
+      );
+    } catch (proxyErr) {
+      console.log(`[captcha] Proxy falló, usando ProxyLess como fallback...`);
+    }
+  }
+
+  // 2) Fallback: ProxyLess (puede dar LOW_SCORE pero al menos intenta)
+  return await intentarResolverToken(
+    ['ReCaptchaV3EnterpriseTaskProxyLess', 'ReCaptchaV3M1TaskProxyLess'],
+    null
+  );
 }
 
 // Llenar el pool en background
@@ -566,6 +576,10 @@ const server = http.createServer(async (req, res) => {
     const proxyReq = http.request(options, (proxyRes) => {
       res.writeHead(proxyRes.statusCode, proxyRes.headers);
       proxyRes.pipe(res);
+    });
+    proxyReq.on('error', (err) => {
+      console.error('[api-proxy] Error conectando a Apache:', err.message);
+      sendJSON(res, 502, { error: 'API PHP no disponible: ' + err.message });
     });
     req.pipe(proxyReq);
     return;
