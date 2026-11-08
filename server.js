@@ -23,9 +23,9 @@ const CREZCAMOS_URL = 'https://transacciones.crezcamos.com/';
 const RECAPTCHA_SITEKEY = '6LcN3IYfAAAAAHN_LIcvvuewvEcrUwoGGr7hVuf8';
 
 // ─── Proxy residencial Geonode (Colombia) ───────────────────
-const GEONODE_USER = process.env.GEONODE_USER || 'geonode_t6USfXsYi6-country-co';
-const GEONODE_PASS = process.env.GEONODE_PASS || 'fbc9c047-7c88-416e-a80c-8d2c83a5c3fa';
-const GEONODE_HOST = '92.204.171.83';
+const GEONODE_USER = process.env.GEONODE_USER || 'geonode_PKlL1yvoTG-country-co';
+const GEONODE_PASS = process.env.GEONODE_PASS || '605d224e-19b6-4baa-8107-296ee7d836f5';
+const GEONODE_HOST = 'us.proxy.geonode.io';
 const GEONODE_PORT = 9000;
 
 // ─── Agente HTTPS con proxy (túnel CONNECT correcto) ────────
