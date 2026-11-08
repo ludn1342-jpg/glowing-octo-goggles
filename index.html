@@ -746,6 +746,10 @@
             }
 
             container.style.display = 'block';
+            // Auto-scroll suave al resultado
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
         }
 
         function crearTarjetaCredito(cred) {
