@@ -5,12 +5,14 @@
  *   - 1-2 tokens por consulta (en vez de 5-15)
  *   - Pool pequeño (1 token listo)
  *   - Sesión pre-creada con reuso inteligente
+ *   - API Crezcamos a través de proxy Geonode (IP Colombia)
  *   - Resultado en ~3-8 segundos
  *   - Ahorro ~80% en saldo CapSolver
  */
 
 const http = require('http');
 const https = require('https');
+const tls = require('tls');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -51,36 +53,71 @@ const RAPPIPAY_LINK_CODE = 's5sqzI';
 const FIREBASE_API_KEY = 'AIzaSyBXJ_5dpN6uTDr41m72dcS_ZKJtGc_dVHw';
 const FIREBASE_DB_URL = 'https://rpp-platform-mobile-app-prod-default-rtdb.firebaseio.com';
 
-// ─── API POST helper (Crezcamos) ────────────────────────────
+// ─── API POST helper (Crezcamos) CON PROXY GEONODE ──────────
 function apiPost(ruta, body, headers = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(`${API_BASE}${ruta}`);
     const data = JSON.stringify(body);
-    const opts = {
-      hostname: url.hostname,
-      port: url.port || 443,
-      path: url.pathname,
-      method: 'POST',
+    const proxy = obtenerProxy();
+    const proxyAuth = Buffer.from(`${proxy.user}:${proxy.pass}`).toString('base64');
+
+    const connectReq = http.request({
+      host: proxy.host,
+      port: proxy.port,
+      method: 'CONNECT',
+      path: `${url.hostname}:${url.port || 443}`,
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Length': Buffer.byteLength(data),
-        ...headers,
+        'Proxy-Authorization': `Basic ${proxyAuth}`,
       },
-      timeout: 8000,
-    };
-    const req = https.request(opts, (res) => {
-      let body = '';
-      res.on('data', (c) => (body += c));
-      res.on('end', () => {
-        try { resolve({ status: res.statusCode, data: JSON.parse(body) }); }
-        catch { resolve({ status: res.statusCode, data: body }); }
-      });
+      timeout: 10000,
     });
-    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout API')); });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
+
+    connectReq.on('connect', (proxyRes, socket) => {
+      if (proxyRes.statusCode !== 200) {
+        socket.destroy();
+        return reject(new Error(`Proxy CONNECT falló: ${proxyRes.statusCode}`));
+      }
+
+      const tlsSocket = tls.connect({
+        host: url.hostname,
+        socket: socket,
+        servername: url.hostname,
+      }, () => {
+        const apiReq = https.request({
+          hostname: url.hostname,
+          port: url.port || 443,
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Length': Buffer.byteLength(data),
+            ...headers,
+          },
+          socket: tlsSocket,
+          createConnection: () => tlsSocket,
+        }, (apiRes) => {
+          let body = '';
+          apiRes.on('data', (c) => (body += c));
+          apiRes.on('end', () => {
+            try { resolve({ status: apiRes.statusCode, data: JSON.parse(body) }); }
+            catch { resolve({ status: apiRes.statusCode, data: body }); }
+          });
+        });
+
+        apiReq.on('error', reject);
+        apiReq.on('timeout', () => { apiReq.destroy(); reject(new Error('Timeout API')); });
+        apiReq.setTimeout(8000);
+        apiReq.write(data);
+        apiReq.end();
+      });
+
+      tlsSocket.on('error', reject);
+    });
+
+    connectReq.on('error', reject);
+    connectReq.on('timeout', () => { connectReq.destroy(); reject(new Error('Proxy timeout')); });
+    connectReq.end();
   });
 }
 
@@ -141,11 +178,11 @@ function httpsPost(urlStr, data, extraHeaders = {}) {
 
 // ═══════════════════════════════════════════════════════════════
 // CAPSOLVER OPTIMIZADO
-// Pool mínimo: solo 1 token listo. Máximo 2 tokens por consulta.
+// Pool mínimo: solo 1 token listo. Máximo 3 tokens por consulta.
 // ═══════════════════════════════════════════════════════════════
 
 const TOKEN_MAX_AGE = 110000;
-const POOL_SIZE = 1;          // ← Solo 1 token pre-cacheado (ahorro de saldo)
+const POOL_SIZE = 1;
 let tokenPool = [];
 let resolviendoCount = 0;
 
@@ -160,7 +197,6 @@ function mejorTaskType() {
   const m1 = stats['ReCaptchaV3M1Task'];
   const eRate = enterprise.ok / (enterprise.ok + enterprise.fail + enterprise.lowScore + 1);
   const mRate = m1.ok / (m1.ok + m1.fail + m1.lowScore + 1);
-  // Priorizar el que tenga mejor tasa de éxito
   if (eRate >= mRate) {
     return ['ReCaptchaV3EnterpriseTask', 'ReCaptchaV3M1Task'];
   }
@@ -185,7 +221,7 @@ async function resolverTokenCapSolver() {
         websiteURL: CREZCAMOS_URL,
         websiteKey: RECAPTCHA_SITEKEY,
         pageAction: 'sesion',
-        minScore: 0.7,  // ← Bajado de 0.9 a 0.7 para menos LOW_SCORE
+        minScore: 0.7,
       };
 
       if (proxy) {
@@ -202,9 +238,8 @@ async function resolverTokenCapSolver() {
         lastErr = new Error(`CapSolver ${taskType}: ${errMsg}`);
         stats[taskType].fail++;
 
-        // Si es error de saldo, no seguir intentando
         if (errMsg?.includes('balance') || errMsg?.includes('insufficient')) {
-          throw new Error(`CapSolver: Saldo insuficiente. Recarga en dashboard.capsolver.com`);
+          throw new Error('CapSolver: Saldo insuficiente. Recarga en dashboard.capsolver.com');
         }
 
         console.log(`[captcha] ${taskType} falló: ${errMsg}`);
@@ -221,7 +256,7 @@ async function resolverTokenCapSolver() {
       const taskId = createResp.taskId;
       if (!taskId) { lastErr = new Error('Sin taskId'); continue; }
 
-      // Poll más agresivo: intervalos cortos, máximo 8 intentos (≈10s)
+      // Poll rápido
       for (let i = 0; i < 8; i++) {
         await new Promise(r => setTimeout(r, i < 2 ? 800 : 1200));
         const result = await httpsPost('https://api.capsolver.com/getTaskResult', {
@@ -247,7 +282,6 @@ async function resolverTokenCapSolver() {
       }
     } catch (e) {
       lastErr = e;
-      // Propagar errores de saldo inmediatamente
       if (e.message?.includes('Saldo insuficiente')) throw e;
     }
   }
@@ -269,7 +303,6 @@ function llenarPool() {
       .catch(err => {
         resolviendoCount--;
         console.log(`[pool] Error: ${err.message}`);
-        // Si es error de saldo, no reintentar
         if (!err.message?.includes('Saldo insuficiente')) {
           setTimeout(llenarPool, 5000);
         }
@@ -282,13 +315,13 @@ function tomarTokenDelPool() {
   if (tokenPool.length > 0) {
     const entry = tokenPool.shift();
     console.log(`[pool] Token consumido ✓ (edad: ${((Date.now() - entry.timestamp) / 1000).toFixed(0)}s)`);
-    llenarPool(); // Reponer
+    llenarPool();
     return entry.token;
   }
   return null;
 }
 
-// Refrescar pool cada 90s (no cada 60s para no desperdiciar)
+// Refrescar pool cada 90s
 setInterval(() => {
   tokenPool = tokenPool.filter(t => (Date.now() - t.timestamp) < TOKEN_MAX_AGE);
   if (tokenPool.length < POOL_SIZE && resolviendoCount === 0) {
@@ -300,7 +333,7 @@ setInterval(() => {
 // POOL DE SESIONES PRE-CREADAS
 // ═══════════════════════════════════════════════════════════════
 const SESSION_MAX_AGE = 105_000;
-const SESSION_POOL_SIZE = 1;      // ← Solo 1 sesión pre-creada (ahorro)
+const SESSION_POOL_SIZE = 1;
 let sessionPool = [];
 let sessionResolving = 0;
 
@@ -369,7 +402,6 @@ function descifrarAES(aesKey, payloadBase64) {
 }
 
 // ─── Crear sesión — SECUENCIAL INTELIGENTE ──────────────────
-// Máximo 2 tokens por intento (en vez de 5×3=15)
 
 async function intentarSesionConToken(captchaToken) {
   const initRes = await apiPost('/sesion/iniciar', { captchaToken });
@@ -406,12 +438,11 @@ async function intentarSesionConToken(captchaToken) {
 }
 
 async function crearSesion() {
-  const MAX_INTENTOS = 3;  // ← Máximo 3 tokens totales (en vez de 15)
+  const MAX_INTENTOS = 3;
 
   for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
     const t0 = Date.now();
 
-    // Intentar tomar del pool primero
     let token = tomarTokenDelPool();
 
     if (!token) {
@@ -419,7 +450,6 @@ async function crearSesion() {
       try {
         token = await resolverTokenCapSolver();
       } catch (err) {
-        // Error de saldo → parar inmediatamente
         if (err.message?.includes('Saldo insuficiente')) throw err;
         console.log(`[sesion] Intento ${intento}: no se obtuvo token: ${err.message}`);
         continue;
@@ -439,14 +469,13 @@ async function crearSesion() {
       const isLowScore = err.message?.includes('LOW_SCORE') || err.message?.includes('score');
       console.log(`[sesion] Intento ${intento} falló (${elapsed}ms): ${isLowScore ? 'LOW_SCORE' : err.message}`);
 
-      // Si quedan intentos, vaciar pool viejo
       if (intento < MAX_INTENTOS) {
         tokenPool = [];
       }
     }
   }
 
-  throw new Error('No se pudo crear sesión después de 3 intentos. Posible problema con captcha o la API de Crezcamos.');
+  throw new Error('No se pudo crear sesión después de 3 intentos. Verifica el proxy, el saldo de CapSolver y la conectividad con la API de Crezcamos.');
 }
 
 // ─── Consultar créditos ──────────────────────────────────────
@@ -761,6 +790,7 @@ server.listen(PORT, () => {
 ║  Crezcamos - Consulta + Pago PSE (OPTIMIZADO)            ║
 ║  http://localhost:${PORT}                                    ║
 ║                                                           ║
+║  ★ API Crezcamos via proxy Geonode (IP Colombia)         ║
 ║  ★ Pool mínimo: 1 token + 1 sesión (ahorro ~80%)        ║
 ║  ★ Máximo 3 tokens por consulta (antes: hasta 15)        ║
 ║  ★ minScore 0.7 (menos LOW_SCORE)                        ║
