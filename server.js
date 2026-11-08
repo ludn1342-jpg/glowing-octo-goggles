@@ -1,11 +1,10 @@
-
 /**
  * Crezcamos - Consulta de Créditos + Pago PSE
  *
  * Estrategia OPTIMIZADA v2:
  *   - API Crezcamos via axios + proxy Geonode (IP Colombia)
  *   - Pool mínimo (1 token + 1 sesión)
- *   - Máximo 3 tokens por consulta
+ *   - Máximo 5 tokens por consulta (sin proxy en captcha)
  *   - Resultado en ~3-8 segundos
  */
 
@@ -15,6 +14,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const PORT = process.env.PORT || 3000;
 const CAPSOLVER_API_KEY = process.env.CAPSOLVER_API_KEY || 'CAP-10B9BFCD4F61A52B1DE0DAAF7A3AD27DB4633AE03ACABDD94E83822C5EA0310F';
@@ -28,6 +28,10 @@ const GEONODE_PASS = process.env.GEONODE_PASS || 'fbc9c047-7c88-416e-a80c-8d2c83
 const GEONODE_HOST = '92.204.171.83';
 const GEONODE_PORT = 9000;
 
+// ─── Agente HTTPS con proxy (túnel CONNECT correcto) ────────
+const PROXY_URL = `http://${GEONODE_USER}:${GEONODE_PASS}@${GEONODE_HOST}:${GEONODE_PORT}`;
+const proxyAgent = new HttpsProxyAgent(PROXY_URL);
+
 function obtenerProxy() {
   return {
     host: GEONODE_HOST,
@@ -38,18 +42,12 @@ function obtenerProxy() {
 }
 
 // Instancia de axios con proxy Geonode para llamadas a Crezcamos
+// IMPORTANTE: usar httpsAgent + proxy:false (no el proxy nativo de axios)
 const axiosCrezcamos = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
-  proxy: {
-    protocol: 'http',
-    host: GEONODE_HOST,
-    port: GEONODE_PORT,
-    auth: {
-      username: GEONODE_USER,
-      password: GEONODE_PASS,
-    },
-  },
+  timeout: 15000,
+  httpsAgent: proxyAgent,
+  proxy: false,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json, text/plain, */*',
@@ -187,9 +185,8 @@ async function resolverTokenCapSolver() {
         minScore: 0.7,
       };
 
-      if (proxy) {
-        task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
-      }
+      // NO enviamos proxy a CapSolver - ellos resuelven con su propia infra
+      // El proxy solo se usa para las llamadas directas a Crezcamos
 
       const createResp = await httpsPost('https://api.capsolver.com/createTask', {
         clientKey: CAPSOLVER_API_KEY,
@@ -398,7 +395,7 @@ async function intentarSesionConToken(captchaToken) {
 }
 
 async function crearSesion() {
-  const MAX_INTENTOS = 3;
+  const MAX_INTENTOS = 5;
 
   for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
     const t0 = Date.now();
@@ -435,7 +432,7 @@ async function crearSesion() {
     }
   }
 
-  throw new Error('No se pudo crear sesión después de 3 intentos. Verifica el proxy Geonode y la conectividad con la API de Crezcamos.');
+  throw new Error('No se pudo crear sesión después de 5 intentos. Verifica el proxy Geonode y la conectividad con la API de Crezcamos.');
 }
 
 // ─── Consultar créditos ──────────────────────────────────────
@@ -746,19 +743,31 @@ const server = http.createServer(async (req, res) => {
 // ─── Test de proxy al iniciar ───────────────────────────────
 setTimeout(async () => {
   console.log('[test] Verificando proxy Geonode...');
+
+  // Test 1: IP pública via proxy (HTTP simple)
   try {
     const testRes = await axios.get('http://ip-api.com/json', {
-      proxy: {
-        protocol: 'http',
-        host: GEONODE_HOST,
-        port: GEONODE_PORT,
-        auth: { username: GEONODE_USER, password: GEONODE_PASS },
-      },
+      httpAgent: new (require('http-proxy-agent').HttpProxyAgent)(PROXY_URL),
+      proxy: false,
       timeout: 8000,
     });
-    console.log(`[test] Proxy OK ✓ IP: ${testRes.data?.query} País: ${testRes.data?.country}`);
+    console.log(`[test] Proxy IP ✓ → ${testRes.data?.query} (${testRes.data?.country})`);
   } catch (err) {
-    console.log(`[test] Proxy falló: ${err.message}`);
+    console.log(`[test] Proxy IP falló: ${err.message}`);
+  }
+
+  // Test 2: Conexión HTTPS a Crezcamos via proxy (túnel CONNECT)
+  try {
+    const testRes = await axios.get(API_BASE.replace('/pagos/api/public', ''), {
+      httpsAgent: proxyAgent,
+      proxy: false,
+      timeout: 10000,
+      validateStatus: () => true,
+    });
+    console.log(`[test] Proxy → Crezcamos ✓ (status: ${testRes.status})`);
+  } catch (err) {
+    console.log(`[test] Proxy → Crezcamos falló: ${err.message}`);
+    console.log('[test] ⚠️  El proxy no puede conectar a Crezcamos. Verifica credenciales y puerto.');
   }
 }, 2000);
 
@@ -771,7 +780,7 @@ server.listen(PORT, () => {
 ║                                                           ║
 ║  ★ API Crezcamos via axios + proxy Geonode (IP Colombia) ║
 ║  ★ Pool mínimo: 1 token + 1 sesión (ahorro ~80%)        ║
-║  ★ Máximo 3 tokens por consulta                          ║
+║  ★ Máximo 5 tokens por consulta                          ║
 ║  ★ Stats: http://localhost:${PORT}/stats                     ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
