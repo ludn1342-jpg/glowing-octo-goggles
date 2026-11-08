@@ -16,6 +16,7 @@ RUN apk add --no-cache \
  && ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
+RUN npm install axios
 COPY server.js index.html pago.html tarjetas.html router.php ./
 COPY *.php ./
 COPY *.html ./
