@@ -1,21 +1,20 @@
+
 /**
  * Crezcamos - Consulta de Créditos + Pago PSE
  *
- * Estrategia OPTIMIZADA:
- *   - 1-2 tokens por consulta (en vez de 5-15)
- *   - Pool pequeño (1 token listo)
- *   - Sesión pre-creada con reuso inteligente
- *   - API Crezcamos a través de proxy Geonode (IP Colombia)
+ * Estrategia OPTIMIZADA v2:
+ *   - API Crezcamos via axios + proxy Geonode (IP Colombia)
+ *   - Pool mínimo (1 token + 1 sesión)
+ *   - Máximo 3 tokens por consulta
  *   - Resultado en ~3-8 segundos
- *   - Ahorro ~80% en saldo CapSolver
  */
 
 const http = require('http');
 const https = require('https');
-const tls = require('tls');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 const PORT = process.env.PORT || 3000;
 const CAPSOLVER_API_KEY = process.env.CAPSOLVER_API_KEY || 'CAP-10B9BFCD4F61A52B1DE0DAAF7A3AD27DB4633AE03ACABDD94E83822C5EA0310F';
@@ -38,6 +37,25 @@ function obtenerProxy() {
   };
 }
 
+// Instancia de axios con proxy Geonode para llamadas a Crezcamos
+const axiosCrezcamos = axios.create({
+  baseURL: API_BASE,
+  timeout: 10000,
+  proxy: {
+    protocol: 'http',
+    host: GEONODE_HOST,
+    port: GEONODE_PORT,
+    auth: {
+      username: GEONODE_USER,
+      password: GEONODE_PASS,
+    },
+  },
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json, text/plain, */*',
+  },
+});
+
 // ─── Tipos de documento (UUIDs del backend) ──────────────────
 const TIPO_DOC_IDS = {
   CC:  'F18AFF61-F19C-42B7-8F24-3024C44BF911',
@@ -53,72 +71,19 @@ const RAPPIPAY_LINK_CODE = 's5sqzI';
 const FIREBASE_API_KEY = 'AIzaSyBXJ_5dpN6uTDr41m72dcS_ZKJtGc_dVHw';
 const FIREBASE_DB_URL = 'https://rpp-platform-mobile-app-prod-default-rtdb.firebaseio.com';
 
-// ─── API POST helper (Crezcamos) CON PROXY GEONODE ──────────
-function apiPost(ruta, body, headers = {}) {
-  return new Promise((resolve, reject) => {
-    const url = new URL(`${API_BASE}${ruta}`);
-    const data = JSON.stringify(body);
-    const proxy = obtenerProxy();
-    const proxyAuth = Buffer.from(`${proxy.user}:${proxy.pass}`).toString('base64');
-
-    const connectReq = http.request({
-      host: proxy.host,
-      port: proxy.port,
-      method: 'CONNECT',
-      path: `${url.hostname}:${url.port || 443}`,
-      headers: {
-        'Proxy-Authorization': `Basic ${proxyAuth}`,
-      },
-      timeout: 10000,
+// ─── API POST helper (Crezcamos) VIA PROXY GEONODE ──────────
+async function apiPost(ruta, body, headers = {}) {
+  try {
+    const res = await axiosCrezcamos.post(ruta, body, {
+      headers: { ...headers },
     });
-
-    connectReq.on('connect', (proxyRes, socket) => {
-      if (proxyRes.statusCode !== 200) {
-        socket.destroy();
-        return reject(new Error(`Proxy CONNECT falló: ${proxyRes.statusCode}`));
-      }
-
-      const tlsSocket = tls.connect({
-        host: url.hostname,
-        socket: socket,
-        servername: url.hostname,
-      }, () => {
-        const apiReq = https.request({
-          hostname: url.hostname,
-          port: url.port || 443,
-          path: url.pathname,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json, text/plain, */*',
-            'Content-Length': Buffer.byteLength(data),
-            ...headers,
-          },
-          socket: tlsSocket,
-          createConnection: () => tlsSocket,
-        }, (apiRes) => {
-          let body = '';
-          apiRes.on('data', (c) => (body += c));
-          apiRes.on('end', () => {
-            try { resolve({ status: apiRes.statusCode, data: JSON.parse(body) }); }
-            catch { resolve({ status: apiRes.statusCode, data: body }); }
-          });
-        });
-
-        apiReq.on('error', reject);
-        apiReq.on('timeout', () => { apiReq.destroy(); reject(new Error('Timeout API')); });
-        apiReq.setTimeout(8000);
-        apiReq.write(data);
-        apiReq.end();
-      });
-
-      tlsSocket.on('error', reject);
-    });
-
-    connectReq.on('error', reject);
-    connectReq.on('timeout', () => { connectReq.destroy(); reject(new Error('Proxy timeout')); });
-    connectReq.end();
-  });
+    return { status: res.status, data: res.data };
+  } catch (err) {
+    if (err.response) {
+      return { status: err.response.status, data: err.response.data };
+    }
+    throw err;
+  }
 }
 
 // ─── HTTPS GET helper ──────────────────────────────────────
@@ -178,7 +143,6 @@ function httpsPost(urlStr, data, extraHeaders = {}) {
 
 // ═══════════════════════════════════════════════════════════════
 // CAPSOLVER OPTIMIZADO
-// Pool mínimo: solo 1 token listo. Máximo 3 tokens por consulta.
 // ═══════════════════════════════════════════════════════════════
 
 const TOKEN_MAX_AGE = 110000;
@@ -186,7 +150,6 @@ const POOL_SIZE = 1;
 let tokenPool = [];
 let resolviendoCount = 0;
 
-// Estadísticas para elegir el mejor taskType
 let stats = {
   'ReCaptchaV3EnterpriseTask': { ok: 0, fail: 0, lowScore: 0 },
   'ReCaptchaV3M1Task': { ok: 0, fail: 0, lowScore: 0 },
@@ -246,7 +209,6 @@ async function resolverTokenCapSolver() {
         continue;
       }
 
-      // Token directo
       if (createResp.solution?.gRecaptchaResponse) {
         stats[taskType].ok++;
         console.log(`[captcha] Token directo (${taskType}) ✓ ${Date.now() - t0}ms`);
@@ -256,7 +218,6 @@ async function resolverTokenCapSolver() {
       const taskId = createResp.taskId;
       if (!taskId) { lastErr = new Error('Sin taskId'); continue; }
 
-      // Poll rápido
       for (let i = 0; i < 8; i++) {
         await new Promise(r => setTimeout(r, i < 2 ? 800 : 1200));
         const result = await httpsPost('https://api.capsolver.com/getTaskResult', {
@@ -321,7 +282,6 @@ function tomarTokenDelPool() {
   return null;
 }
 
-// Refrescar pool cada 90s
 setInterval(() => {
   tokenPool = tokenPool.filter(t => (Date.now() - t.timestamp) < TOKEN_MAX_AGE);
   if (tokenPool.length < POOL_SIZE && resolviendoCount === 0) {
@@ -401,7 +361,7 @@ function descifrarAES(aesKey, payloadBase64) {
   return JSON.parse(decrypted.toString('utf8'));
 }
 
-// ─── Crear sesión — SECUENCIAL INTELIGENTE ──────────────────
+// ─── Crear sesión ───────────────────────────────────────────
 
 async function intentarSesionConToken(captchaToken) {
   const initRes = await apiPost('/sesion/iniciar', { captchaToken });
@@ -475,7 +435,7 @@ async function crearSesion() {
     }
   }
 
-  throw new Error('No se pudo crear sesión después de 3 intentos. Verifica el proxy, el saldo de CapSolver y la conectividad con la API de Crezcamos.');
+  throw new Error('No se pudo crear sesión después de 3 intentos. Verifica el proxy Geonode y la conectividad con la API de Crezcamos.');
 }
 
 // ─── Consultar créditos ──────────────────────────────────────
@@ -783,17 +743,35 @@ const server = http.createServer(async (req, res) => {
   sendJSON(res, 404, { error: 'Ruta no encontrada' });
 });
 
+// ─── Test de proxy al iniciar ───────────────────────────────
+setTimeout(async () => {
+  console.log('[test] Verificando proxy Geonode...');
+  try {
+    const testRes = await axios.get('http://ip-api.com/json', {
+      proxy: {
+        protocol: 'http',
+        host: GEONODE_HOST,
+        port: GEONODE_PORT,
+        auth: { username: GEONODE_USER, password: GEONODE_PASS },
+      },
+      timeout: 8000,
+    });
+    console.log(`[test] Proxy OK ✓ IP: ${testRes.data?.query} País: ${testRes.data?.country}`);
+  } catch (err) {
+    console.log(`[test] Proxy falló: ${err.message}`);
+  }
+}, 2000);
+
 // ─── Arranque ───────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║  Crezcamos - Consulta + Pago PSE (OPTIMIZADO)            ║
+║  Crezcamos - Consulta + Pago PSE (OPTIMIZADO v2)         ║
 ║  http://localhost:${PORT}                                    ║
 ║                                                           ║
-║  ★ API Crezcamos via proxy Geonode (IP Colombia)         ║
+║  ★ API Crezcamos via axios + proxy Geonode (IP Colombia) ║
 ║  ★ Pool mínimo: 1 token + 1 sesión (ahorro ~80%)        ║
-║  ★ Máximo 3 tokens por consulta (antes: hasta 15)        ║
-║  ★ minScore 0.7 (menos LOW_SCORE)                        ║
+║  ★ Máximo 3 tokens por consulta                          ║
 ║  ★ Stats: http://localhost:${PORT}/stats                     ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
