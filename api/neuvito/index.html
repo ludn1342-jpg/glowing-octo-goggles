@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solicitud de Tradición y Libertad — Certificado</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <style>
+        :root {
+            --co-blue: #2c5697;
+            --co-blue-hover: #214272;
+            --co-blue-tint: #eaf0f8;
+            --co-yellow: #f6c915;
+            --co-red: #c1121f;
+            --co-text: #111827;
+            --co-text-2: #374151;
+            --co-text-muted: #6b7280;
+            --co-bg: #fff;
+            --co-input-bg: #f3f4f6;
+            --co-border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--co-bg);
+            color: var(--co-text);
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            padding: 16px 0;
+            background: var(--co-bg);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo svg {
+            height: 44px;
+            width: auto;
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar-container {
+            width: 120px;
+            height: 6px;
+            background: var(--co-border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--co-blue);
+            width: 33%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: var(--co-text);
+            white-space: nowrap;
+        }
+
+        .header-stripe {
+            display: flex;
+            height: 3px;
+            margin-top: 16px;
+        }
+
+        .stripe-1 { flex: 2; background-color: var(--co-yellow); }
+        .stripe-2 { flex: 1; background-color: var(--co-blue); }
+        .stripe-3 { flex: 1; background-color: var(--co-red); }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 32px;
+            justify-content: flex-start;
+        }
+
+        /* SIDEBAR */
+        aside {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .progress-list {
+            list-style: none;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--co-border);
+        }
+
+        .progress-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-number {
+            width: 28px;
+            height: 28px;
+            background: var(--co-border);
+            color: var(--co-text-2);
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .progress-number.active,
+        .progress-number.completed {
+            background: var(--co-blue);
+            color: #fff;
+        }
+
+        .progress-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .progress-title span:first-child {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--co-text);
+        }
+
+        .progress-item:not(.active) .progress-title span:first-child {
+            color: var(--co-text-muted);
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-block;
+            border-radius: 2px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.info {
+            background: var(--co-blue-tint);
+            color: var(--co-blue);
+        }
+
+        .badge.neutral {
+            background: var(--co-input-bg);
+            color: var(--co-text-muted);
+        }
+
+        /* FORM AREA */
+        .form-container {
+            flex: 1;
+            max-width: 640px;
+            min-width: 0;
+        }
+
+        .form-header {
+            margin-bottom: 20px;
+        }
+
+        .form-header h1 {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--co-text);
+            margin: 0 0 8px 0;
+        }
+
+        .form-header p {
+            font-size: 0.9375rem;
+            color: var(--co-text-2);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        form {
+            background: transparent;
+        }
+
+        .form-intro {
+            margin-bottom: 28px;
+            font-size: 0.875rem;
+            color: var(--co-text-muted);
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            color: var(--co-text);
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .kern-input,
+        .kern-select {
+            background-color: var(--co-input-bg);
+            border: none;
+            border-bottom: 2px solid var(--co-text-2);
+            height: 48px;
+            color: var(--co-text);
+            width: 100%;
+            padding: 8px 12px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        .kern-input::placeholder {
+            color: var(--co-text-muted);
+        }
+
+        .kern-input:hover,
+        .kern-select:hover {
+            border-bottom-color: var(--co-text);
+        }
+
+        .kern-input:focus,
+        .kern-select:focus {
+            border-bottom: 3px solid var(--co-blue);
+            padding-bottom: 7px;
+        }
+
+        .kern-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            padding-right: 40px;
+        }
+
+        /* BUTTONS */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.15s;
+        }
+
+        .btn-primary {
+            background-color: var(--co-blue);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--co-blue-hover);
+        }
+
+        .btn-secondary {
+            color: var(--co-blue);
+            border: 2px solid var(--co-blue);
+            background: transparent;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--co-blue-tint);
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--co-border);
+            padding: 16px 24px;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            text-decoration: none;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            margin: 0 0 12px;
+        }
+
+        .footer-disclaimer {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            aside {
+                display: none;
+            }
+
+            .form-container {
+                max-width: 100%;
+            }
+
+            .header-container {
+                padding: 0 16px;
+            }
+
+            main {
+                padding: 16px;
+            }
+
+            .form-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-container {
+                flex-direction: column;
+            }
+
+            .form-header h1 {
+                font-size: 1.125rem;
+            }
+
+            .form-header p {
+                font-size: 0.875rem;
+            }
+
+            .form-intro {
+                font-size: 0.8125rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a aria-label="Certificado de Tradición y Libertad" href="index.html" class="logo">
+                <svg width="400" height="48" viewBox="0 0 400 48" role="img" aria-label="Certificado de Tradición y Libertad">
+                    <g transform="translate(0 6)">
+                        <rect x="0" y="0" width="5.5" height="18" fill="#F6C915"></rect>
+                        <rect x="0" y="18" width="5.5" height="9" fill="#2C5697"></rect>
+                        <rect x="0" y="27" width="5.5" height="9" fill="#C1121F"></rect>
+                    </g>
+                    <text x="24" y="16" dominant-baseline="central" font-family="'Inter', system-ui, sans-serif" font-size="10" font-weight="500" letter-spacing="1.2" fill="#6B7280">SOLICITAR DOCUMENTO</text>
+                    <text x="24" y="34" dominant-baseline="central" font-family="'Inter', system-ui, sans-serif" font-size="17" font-weight="550" fill="#111827">Certificado de Tradición y Libertad</text>
+                </svg>
+            </a>
+            <div class="progress-info">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <span class="progress-text">33% completado</span>
+            </div>
+        </div>
+        <div class="header-stripe">
+            <div class="stripe-1"></div>
+            <div class="stripe-2"></div>
+            <div class="stripe-3"></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="content-wrapper">
+            <aside>
+                <nav aria-label="Progreso">
+                    <ul class="progress-list">
+                        <li class="progress-item active">
+                            <span class="progress-number active">1</span>
+                            <div class="progress-title">
+                                <span>Tu información personal</span>
+                                <span class="badge info">Actual</span>
+                            </div>
+                        </li>
+                        <li class="progress-item">
+                            <span class="progress-number">2</span>
+                            <div class="progress-title">
+                                <span>Su solicitud en línea</span>
+                                <span class="badge neutral">Pendiente</span>
+                            </div>
+                        </li>
+                        <li class="progress-item">
+                            <span class="progress-number">3</span>
+                            <div class="progress-title">
+                                <span>Pago</span>
+                                <span class="badge neutral">Pendiente</span>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Solicitud de Tradición y Libertad</h1>
+                    <p>Completa los siguientes pasos para tramitar tu Certificado de Tradición y Libertad en línea. El proceso toma solo unos minutos y recibirás tu documento por correo electrónico.</p>
+                </div>
+
+                <form novalidate id="tradicionForm">
+                    <p class="form-intro">Por favor proporciónes alguna información personal, esto es esencial para su solicitud de Certificado de tradición y libertad.</p>
+
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label class="form-label">Oficina de Registro</label>
+                            <select class="kern-select" id="oficina" required>
+                                <option value="">Selecciona una oficina</option>
+                                
+                                <!-- BOGOTÁ -->
+                                <option value="001-BOGOTA-ZONA-NORTE">001 - BOGOTÁ ZONA NORTE</option>
+                                <option value="002-BOGOTA-ZONA-SUR">002 - BOGOTÁ ZONA SUR</option>
+                                <option value="003-BOGOTA-ZONA-CENTRO">003 - BOGOTÁ ZONA CENTRO</option>
+                                
+                                <!-- ANTIOQUIA -->
+                                <option value="010-ABEJORRAL">010 - ABEJORRAL</option>
+                                <option value="012-AMALFI">012 - AMALFI</option>
+                                <option value="015-ANDES">015 - ANDES</option>
+                                <option value="020-APARTADO">020 - APARTADÓ</option>
+                                <option value="025-BOLIVAR">025 - BOLÍVAR</option>
+                                <option value="030-CANASGORDAS">030 - CANASGORDAS</option>
+                                <option value="035-CAUCASIA">035 - CAUCASIA</option>
+                                <option value="040-DABEIBA">040 - DABEIBA</option>
+                                <option value="045-FREDONIA">045 - FREDONIA</option>
+                                <option value="050-FRONTINO">050 - FRONTINO</option>
+                                <option value="055-GIRARDOTA">055 - GIRARDOTA</option>
+                                <option value="060-JERICO">060 - JERICÓ</option>
+                                <option value="065-LA-CEJA">065 - LA CEJA</option>
+                                <option value="070-MARINILLA">070 - MARINILLA</option>
+                                <option value="075-MEDELLIN-ZONA-NORTE">075 - MEDELLÍN ZONA NORTE</option>
+                                <option value="076-MEDELLIN-ZONA-SUR">076 - MEDELLÍN ZONA SUR</option>
+                                <option value="077-MEDELLIN-ZONA-CENTRO">077 - MEDELLÍN ZONA CENTRO</option>
+                                <option value="078-MEDELLIN-ZONA-ORIENTE">078 - MEDELLÍN ZONA ORIENTE</option>
+                                <option value="079-MEDELLIN-ZONA-OCCIDENTE">079 - MEDELLÍN ZONA OCCIDENTE</option>
+                                <option value="080-PUERTO-BERRIO">080 - PUERTO BERRÍO</option>
+                                <option value="085-RIONEGRO">085 - RIONEGRO</option>
+                                <option value="090-SANTA-FE-DE-ANTIOQUIA">090 - SANTA FE DE ANTIOQUIA</option>
+                                <option value="095-SONSON">095 - SONSÓN</option>
+                                <option value="100-SOPETRAN">100 - SOPETRAN</option>
+                                <option value="105-TITIRIBI">105 - TITIRIBI</option>
+                                <option value="110-URRAO">110 - URRAÓ</option>
+                                <option value="115-YARUMAL">115 - YARUMAL</option>
+                                <option value="118-ENVIGADO">118 - ENVIGADO</option>
+                                <option value="119-SABANETA">119 - SABANETA</option>
+                                
+                                <!-- ATLÁNTICO -->
+                                <option value="120-BARRANQUILLA">120 - BARRANQUILLA</option>
+                                <option value="124-SABANALARGA">124 - SABANALARGA</option>
+                                <option value="126-MALAMBO">126 - MALAMBO</option>
+                                <option value="127-PUERTO-COLOMBIA">127 - PUERTO COLOMBIA</option>
+                                
+                                <!-- BOLÍVAR -->
+                                <option value="128-CARTAGENA">128 - CARTAGENA</option>
+                                <option value="132-CARMEN-DE-BOLIVAR">132 - CARMEN DE BOLÍVAR</option>
+                                <option value="136-MAGANGUE">136 - MAGANGUÉ</option>
+                                <option value="140-MOMPOS">140 - MOMPÓS</option>
+                                <option value="142-SIMITI">142 - SIMITÍ</option>
+                                <option value="144-TURBACO">144 - TURBACO</option>
+                                <option value="145-ARJONA">145 - ARJONA</option>
+                                
+                                <!-- BOYACÁ -->
+                                <option value="146-TUNJA">146 - TUNJA</option>
+                                <option value="150-CHIQUINQUIRA">150 - CHIQUINQUIRÁ</option>
+                                <option value="154-DUITAMA">154 - DUITAMA</option>
+                                <option value="158-GARAGOA">158 - GARAGOA</option>
+                                <option value="162-GUATEQUE">162 - GUATEQUE</option>
+                                <option value="166-MONIQUIRA">166 - MONIQUIRÁ</option>
+                                <option value="170-PUERTO-BOYACA">170 - PUERTO BOYACÁ</option>
+                                <option value="174-RAMIRIQUI">174 - RAMIRIQUÍ</option>
+                                <option value="178-SANTA-ROSA-DE-VITERBO">178 - SANTA ROSA DE VITERBO</option>
+                                <option value="182-SOGAMOSO">182 - SOGAMOSO</option>
+                                <option value="186-SOATA">186 - SOATÁ</option>
+                                <option value="190-SOCHA">190 - SOCHA</option>
+                                <option value="192-PAIPA">192 - PAIPA</option>
+                                <option value="193-VILLA-DE-LEYVA">193 - VILLA DE LEYVA</option>
+                                
+                                <!-- CALDAS -->
+                                <option value="194-MANIZALES">194 - MANIZALES</option>
+                                <option value="198-AGUADAS">198 - AGUADAS</option>
+                                <option value="202-ANSERMA">202 - ANSERMA</option>
+                                <option value="206-LA-DORADA">206 - LA DORADA</option>
+                                <option value="210-RIOSUCIO">210 - RIOSUCIO</option>
+                                <option value="214-SALAMINA">214 - SALAMINA</option>
+                                <option value="216-SUPÍA">216 - SUPÍA</option>
+                                <option value="217-VILLAMARÍA">217 - VILLAMARÍA</option>
+                                
+                                <!-- CAQUETÁ -->
+                                <option value="218-FLORENCIA">218 - FLORENCIA</option>
+                                <option value="220-PAUJIL">220 - PAUJIL</option>
+                                <option value="221-SAN-VICENTE-DEL-CAGUAN">221 - SAN VICENTE DEL CAGUÁN</option>
+                                
+                                <!-- CAUCA -->
+                                <option value="222-POPAYAN">222 - POPAYÁN</option>
+                                <option value="226-CALOTO">226 - CALOTO</option>
+                                <option value="230-GUAPI">230 - GUAPI</option>
+                                <option value="234-PUERTO-TEJADA">234 - PUERTO TEJADA</option>
+                                <option value="238-SANTANDER-DE-QUILICHAO">238 - SANTANDER DE QUILICHAO</option>
+                                <option value="240-TIMBIO">240 - TIMBÍO</option>
+                                <option value="241-SILVIA">241 - SILVIA</option>
+                                
+                                <!-- CESAR -->
+                                <option value="242-VALLEDUPAR">242 - VALLEDUPAR</option>
+                                <option value="246-AGUACHICA">246 - AGUACHICA</option>
+                                <option value="250-CHIRIGUANA">250 - CHIRIGUANÁ</option>
+                                <option value="252-MANAURE">252 - MANAURE</option>
+                                <option value="253-LA-JAGUA-DE-IBIRICO">253 - LA JAGUA DE IBIRICO</option>
+                                
+                                <!-- CÓRDOBA -->
+                                <option value="254-MONTERIA">254 - MONTERÍA</option>
+                                <option value="258-CERETE">258 - CERETÉ</option>
+                                <option value="262-LORICA">262 - LORICA</option>
+                                <option value="266-SAHAGUN">266 - SAHAGÚN</option>
+                                <option value="268-SAN-PELAYO">268 - SAN PELAYO</option>
+                                <option value="269-TIERRALTA">269 - TIERRALTA</option>
+                                
+                                <!-- CUNDINAMARCA -->
+                                <option value="270-AGUA-DE-DIOS">270 - AGUA DE DIOS</option>
+                                <option value="273-CAQUEZA">273 - CAQUEZA</option>
+                                <option value="276-CHOCONTA">276 - CHOCONTÁ</option>
+                                <option value="279-FACATATIVA">279 - FACATATIVÁ</option>
+                                <option value="282-FUNZA">282 - FUNZA</option>
+                                <option value="285-GACHETA">285 - GACHETA</option>
+                                <option value="288-GIRARDOT">288 - GIRARDOT</option>
+                                <option value="291-GUADUAS">291 - GUADUAS</option>
+                                <option value="294-LA-MESA">294 - LA MESA</option>
+                                <option value="297-LA-PALMA">297 - LA PALMA</option>
+                                <option value="300-PACHO">300 - PACHO</option>
+                                <option value="303-SOACHA">303 - SOACHA</option>
+                                <option value="306-UBATE">306 - UBATE</option>
+                                <option value="309-VILLETA">309 - VILLETA</option>
+                                <option value="312-ZIPAQUIRA">312 - ZIPAQUIRA</option>
+                                <option value="314-FUSAGASUGA">314 - FUSAGASUGÁ</option>
+                                <option value="317-DUITAMA-CUNDI">317 - ZIPACÓN</option>
+                                
+                                <!-- CHOCÓ -->
+                                <option value="315-QUIBDO">315 - QUIBDÓ</option>
+                                <option value="318-ISTMINA">318 - ISTMINA</option>
+                                <option value="320-NUQUI">320 - NUQUÍ</option>
+                                
+                                <!-- HUILA -->
+                                <option value="321-NEIVA">321 - NEIVA</option>
+                                <option value="324-GARZON">324 - GARZÓN</option>
+                                <option value="327-LA-PLATA">327 - LA PLATA</option>
+                                <option value="330-PITALITO">330 - PITALITO</option>
+                                <option value="332-RIVERA">332 - RIVERA</option>
+                                <option value="335-ISNOS">335 - ISNOS</option>
+                                
+                                <!-- LA GUAJIRA -->
+                                <option value="333-RIOHACHA">333 - RIOHACHA</option>
+                                <option value="337-MAICAO">337 - MAICAO</option>
+                                <option value="339-URIBIA">339 - URIBIA</option>
+                                
+                                <!-- MAGDALENA -->
+                                <option value="341-SANTA-MARTA">341 - SANTA MARTA</option>
+                                <option value="345-CIENAGA">345 - CIÉNEGA</option>
+                                <option value="349-EL-BANCO">349 - EL BANCO</option>
+                                <option value="353-PLATO">353 - PLATO</option>
+                                <option value="355-FUNDACION">355 - FUNDACIÓN</option>
+                                <option value="356-ARACATACA">356 - ARACATACA</option>
+                                
+                                <!-- META -->
+                                <option value="357-VILLAVICENCIO">357 - VILLAVICENCIO</option>
+                                <option value="360-ACACIAS">360 - ACACIAS</option>
+                                <option value="363-GRANADA">363 - GRANADA</option>
+                                <option value="366-PUERTO-LOPEZ">366 - PUERTO LOPEZ</option>
+                                <option value="368-SAN-JUAN-DE-ARAMA">368 - SAN JUAN DE ARAMA</option>
+                                
+                                <!-- NARIÑO -->
+                                <option value="370-PASTO">370 - PASTO</option>
+                                <option value="373-IPIALES">373 - IPIALES</option>
+                                <option value="376-TUMACO">376 - TUMACO</option>
+                                <option value="379-TUQUERRES">379 - TUQUERRES</option>
+                                <option value="381-SANDONÁ">381 - SANDONÁ</option>
+                                <option value="384-LA-CRUZ-DE-SU">384 - LA CRUZ DE SU</option>
+                                
+                                <!-- NORTE DE SANTANDER -->
+                                <option value="382-CUCUTA">382 - CÚCUTA</option>
+                                <option value="386-CHINACOTA">386 - CHINACOTA</option>
+                                <option value="390-OCANA">390 - OCAÑA</option>
+                                <option value="394-PAMPLONA">394 - PAMPLONA</option>
+                                <option value="398-SALAZAR-DE-LAS-PALMAS">398 - SALAZAR DE LAS PALMAS</option>
+                                <option value="399-TIBÚ">399 - TIBÚ</option>
+                                
+                                <!-- QUINDÍO -->
+                                <option value="400-ARMENIA">400 - ARMENIA</option>
+                                <option value="402-CALARCA">402 - CALARCÁ</option>
+                                <option value="404-PEREIRA">404 - PEREIRA</option>
+                                <option value="406-BELEN-DE-UMBRIA">406 - BELÉN DE UMBRÍA</option>
+                                <option value="408-SANTA-ROSA-DE-CABAL">408 - SANTA ROSA DE CABAL</option>
+                                
+                                <!-- RISARALDA -->
+                                <option value="405-DOSQUEBRADAS">405 - DOSQUEBRADAS</option>
+                                <option value="409-LA-VIRGINIA">409 - LA VIRGINIA</option>
+                                
+                                <!-- SANTANDER -->
+                                <option value="410-BUCARAMANGA">410 - BUCARAMANGA</option>
+                                <option value="414-BARRANCABERMEJA">414 - BARRANCABERMEJA</option>
+                                <option value="418-BARICHARA">418 - BARICHARA</option>
+                                <option value="422-CHARALA">422 - CHARALA</option>
+                                <option value="426-MALAGA">426 - MÁLAGA</option>
+                                <option value="430-SAN-GIL">430 - SAN GIL</option>
+                                <option value="434-SOCORRO">434 - SOCORRO</option>
+                                <option value="438-VELEZ">438 - VÉLEZ</option>
+                                <option value="436-GIRÓN">436 - GIRÓN</option>
+                                <option value="437-PIEDECUESTA">437 - PIEDECUESTA</option>
+                                
+                                <!-- SUCRE -->
+                                <option value="440-SINCELEJO">440 - SINCELEJO</option>
+                                <option value="444-COROZAL">444 - COROZAL</option>
+                                <option value="448-SAN-MARCOS">448 - SAN MARCOS</option>
+                                <option value="446-SAMPUES">446 - SAMPUES</option>
+                                <option value="447-TOLÚ">447 - TOLÚ</option>
+                                
+                                <!-- TOLIMA -->
+                                <option value="450-IBAGUE">450 - IBAGUÉ</option>
+                                <option value="455-CHAPARRAL">455 - CHAPARRAL</option>
+                                <option value="460-EL-ESPINAL">460 - EL ESPINAL</option>
+                                <option value="465-HONDA">465 - HONDA</option>
+                                <option value="470-LERIDA">470 - LÉRIDA</option>
+                                <option value="475-MELGAR">475 - MELGAR</option>
+                                <option value="480-PURIFICACION">480 - PURIFICACIÓN</option>
+                                <option value="481-GUAMO">481 - GUAMO</option>
+                                <option value="483-SALDAÑA">483 - SALDAÑA</option>
+                                
+                                <!-- VALLE DEL CAUCA -->
+                                <option value="485-CALI">485 - CALI</option>
+                                <option value="490-BUENAVENTURA">490 - BUENAVENTURA</option>
+                                <option value="495-BUGA">495 - BUGA</option>
+                                <option value="500-CARTAGO">500 - CARTAGO</option>
+                                <option value="505-PALMIRA">505 - PALMIRA</option>
+                                <option value="510-ROLDANILLO">510 - ROLDANILLO</option>
+                                <option value="515-SEVILLA">515 - SEVILLA</option>
+                                <option value="520-TULUA">520 - TULUÁ</option>
+                                <option value="517-JAMUNDI">517 - JAMUNDÍ</option>
+                                <option value="519-FLORIDA">519 - FLORIDA</option>
+                                
+                                <!-- TERRITORIOS ESPECIALES -->
+                                <option value="525-ARAUCA">525 - ARAUCA</option>
+                                <option value="530-YOPAL">530 - YOPAL</option>
+                                <option value="535-MOCOA">535 - MOCOA</option>
+                                <option value="540-PUERTO-ASIS">540 - PUERTO ASÍS</option>
+                                <option value="545-SAN-ANDRES">545 - SAN ANDRÉS</option>
+                                <option value="550-LETICIA">550 - LETICIA</option>
+                                <option value="555-INIRIDA">555 - INÍRIDA</option>
+                                <option value="560-MITU">560 - MITÚ</option>
+                                <option value="565-PUERTO-CARRENO">565 - PUERTO CARREÑO</option>
+                                
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Matrícula Inmobiliaria</label>
+                            <input class="kern-input" type="text" id="matricula" placeholder="Digita el número de matrícula" required />
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">
+                            ← ATRÁS
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            SIGUIENTE →
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="#">Política de Privacidad</a>
+            <a href="#">Términos y Condiciones</a>
+            <a href="#">Política de Reembolsos</a>
+            <a href="#">Contacto</a>
+        </div>
+        <p class="footer-text">© 2026 Certificado de Antecedentes S.A.S.</p>
+        <p class="footer-disclaimer">
+            Servicio privado de gestión documental. No formamos parte del Gobierno de Colombia ni de GOV.CO; actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.
+        </p>
+    </footer>
+
+    <script>
+        document.getElementById('tradicionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const oficina = document.getElementById('oficina').value;
+            const matricula = document.getElementById('matricula').value;
+            
+            if (oficina && matricula) {
+                // Guardar en localStorage para paso2
+                localStorage.setItem('tradicion_oficina', oficina);
+                localStorage.setItem('tradicion_matricula', matricula);
+                localStorage.setItem('tipo_documento', 'tradicion');
+                
+                // Redirigir a paso2
+                window.location.href = 'paso2.html';
+            }
+        });
+    </script>
+</body>
+</html>

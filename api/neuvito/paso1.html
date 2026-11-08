@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solicitud en Línea — Certificado de Antecedentes</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <style>
+        :root {
+            --co-blue: #2c5697;
+            --co-blue-hover: #214272;
+            --co-blue-tint: #eaf0f8;
+            --co-yellow: #f6c915;
+            --co-red: #c1121f;
+            --co-text: #111827;
+            --co-text-2: #374151;
+            --co-text-muted: #6b7280;
+            --co-bg: #fff;
+            --co-input-bg: #f3f4f6;
+            --co-border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--co-bg);
+            color: var(--co-text);
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            padding: 16px 0;
+            background: var(--co-bg);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo svg {
+            height: 44px;
+            width: auto;
+        }
+
+        .progress-info {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar-container {
+            width: 120px;
+            height: 6px;
+            background: var(--co-border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--co-blue);
+            width: 33%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: var(--co-text);
+            white-space: nowrap;
+        }
+
+        .header-stripe {
+            display: flex;
+            height: 3px;
+            margin-top: 16px;
+        }
+
+        .stripe-1 { flex: 2; background-color: var(--co-yellow); }
+        .stripe-2 { flex: 1; background-color: var(--co-blue); }
+        .stripe-3 { flex: 1; background-color: var(--co-red); }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 32px;
+            justify-content: flex-start;
+        }
+
+        /* SIDEBAR */
+        aside {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .progress-list {
+            list-style: none;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--co-border);
+        }
+
+        .progress-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-number {
+            width: 28px;
+            height: 28px;
+            background: var(--co-border);
+            color: var(--co-text-2);
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .progress-number.active,
+        .progress-number.completed {
+            background: var(--co-blue);
+            color: #fff;
+        }
+
+        .progress-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .progress-title span:first-child {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--co-text);
+        }
+
+        .progress-item:not(.active) .progress-title span:first-child {
+            color: var(--co-text-muted);
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-block;
+            border-radius: 2px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.info {
+            background: var(--co-blue-tint);
+            color: var(--co-blue);
+        }
+
+        .badge.neutral {
+            background: var(--co-input-bg);
+            color: var(--co-text-muted);
+        }
+
+        /* FORM AREA */
+        .form-container {
+            flex: 1;
+            max-width: 640px;
+            min-width: 0;
+        }
+
+        .form-header {
+            margin-bottom: 20px;
+        }
+
+        .form-header h1 {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--co-text);
+            margin: 0 0 8px 0;
+        }
+
+        .form-header p {
+            font-size: 0.9375rem;
+            color: var(--co-text-2);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        form {
+            background: transparent;
+        }
+
+        .form-intro {
+            margin-bottom: 28px;
+            font-size: 0.875rem;
+            color: var(--co-text-muted);
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            color: var(--co-text);
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .kern-input,
+        .kern-select {
+            background-color: var(--co-input-bg);
+            border: none;
+            border-bottom: 2px solid var(--co-text-2);
+            height: 48px;
+            color: var(--co-text);
+            width: 100%;
+            padding: 8px 12px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        .kern-input::placeholder {
+            color: var(--co-text-muted);
+        }
+
+        .kern-input:hover,
+        .kern-select:hover {
+            border-bottom-color: var(--co-text);
+        }
+
+        .kern-input:focus,
+        .kern-select:focus {
+            border-bottom: 3px solid var(--co-blue);
+            padding-bottom: 7px;
+        }
+
+        .kern-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            padding-right: 40px;
+        }
+
+        /* BUTTONS */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.15s;
+        }
+
+        .btn-primary {
+            background-color: var(--co-blue);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--co-blue-hover);
+        }
+
+        .btn-secondary {
+            color: var(--co-blue);
+            border: 2px solid var(--co-blue);
+            background: transparent;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--co-blue-tint);
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--co-border);
+            padding: 16px 24px;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            text-decoration: none;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            margin: 0 0 12px;
+        }
+
+        .footer-disclaimer {
+            font-size: 0.75rem;
+            color: var(--co-text-muted);
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .progress-info {
+                display: flex;
+            }
+
+            .content-wrapper {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            aside {
+                display: none;
+            }
+
+            .form-container {
+                max-width: 100%;
+            }
+
+            .header-container {
+                padding: 0 16px;
+            }
+
+            main {
+                padding: 16px;
+            }
+
+            .form-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-container {
+                flex-direction: column;
+            }
+
+            .form-header h1 {
+                font-size: 1.125rem;
+            }
+
+            .form-header p {
+                font-size: 0.875rem;
+            }
+
+            .form-intro {
+                font-size: 0.8125rem;
+            }
+        }
+
+        /* Date inputs group */
+        .date-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .date-group .form-group {
+            gap: 4px;
+        }
+
+        .date-group .form-label {
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+        }
+
+        .date-group .kern-input {
+            text-align: center;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a aria-label="Certificado de Antecedentes" href="index.html" class="logo">
+                <svg width="400" height="48" viewBox="0 0 400 48" role="img" aria-label="Certificado de Antecedentes">
+                    <g transform="translate(0 6)">
+                        <rect x="0" y="0" width="5.5" height="18" fill="#F6C915"></rect>
+                        <rect x="0" y="18" width="5.5" height="9" fill="#2C5697"></rect>
+                        <rect x="0" y="27" width="5.5" height="9" fill="#C1121F"></rect>
+                    </g>
+                    <text x="24" y="16" dominant-baseline="central" font-family="'Inter', system-ui, sans-serif" font-size="10" font-weight="500" letter-spacing="1.2" fill="#6B7280">SOLICITAR DOCUMENTO</text>
+                    <text x="24" y="34" dominant-baseline="central" font-family="'Inter', system-ui, sans-serif" font-size="17" font-weight="550" fill="#111827">Certificado de Antecedentes</text>
+                </svg>
+            </a>
+            <div class="progress-info">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <span class="progress-text">33% completado</span>
+            </div>
+        </div>
+        <div class="header-stripe">
+            <div class="stripe-1"></div>
+            <div class="stripe-2"></div>
+            <div class="stripe-3"></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="content-wrapper">
+            <aside>
+                <nav aria-label="Progreso">
+                    <ul class="progress-list">
+                        <li class="progress-item active">
+                            <span class="progress-number active">1</span>
+                            <div class="progress-title">
+                                <span>Tu información personal</span>
+                                <span class="badge info">Actual</span>
+                            </div>
+                        </li>
+                        <li class="progress-item">
+                            <span class="progress-number">2</span>
+                            <div class="progress-title">
+                                <span>Su solicitud en línea</span>
+                                <span class="badge neutral">Pendiente</span>
+                            </div>
+                        </li>
+                        <li class="progress-item">
+                            <span class="progress-number">3</span>
+                            <div class="progress-title">
+                                <span>Pago</span>
+                                <span class="badge neutral">Pendiente</span>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Solicita tu Certificado de Antecedentes</h1>
+                    <p>Completa los siguientes pasos para tramitar tu certificado en línea. El proceso toma solo unos minutos y recibirás tu documento por correo electrónico.</p>
+                </div>
+
+                <form novalidate>
+                    <p class="form-intro">Por favor proporciónes alguna información personal, esto es esencial para su solicitud de Certificado de Antecedentes.</p>
+
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label class="form-label">Tipo Certificado de Antecedentes</label>
+                            <select class="kern-select" required>
+                                <option value="">Elige uno...</option>
+                                <option value="judicial">Certificado Judicial</option>
+                                <option value="policial">Certificado Policial</option>
+                                <option value="completo">Certificado Completo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Consultar por</label>
+                            <select class="kern-select" required>
+                                <option value="">Elige uno...</option>
+                                <option value="cedula">Cédula de Ciudadanía</option>
+                                <option value="pasaporte">Pasaporte</option>
+                                <option value="cedula-extranjera">Cédula de Extranjería</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Identificación</label>
+                            <select class="kern-select" required>
+                                <option value="">Elige uno...</option>
+                                <option value="cc">Cédula de Ciudadanía</option>
+                                <option value="pasaporte">Pasaporte</option>
+                                <option value="ce">Cédula de Extranjería</option>
+                                <option value="nit">NIT</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Número Identificación</label>
+                            <input class="kern-input" type="text" placeholder="Digita tu número de identificación" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Fecha de expedición de su documento de identidad</label>
+                            <p class="form-intro" style="margin: 0 0 12px 0;">Formato: dd/mm/aaaa (por ejemplo, 14/09/2024).</p>
+                            <div class="date-group">
+                                <div class="form-group">
+                                    <label class="form-label">Día</label>
+                                    <input class="kern-input" type="text" placeholder="DD" maxlength="2" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Mes</label>
+                                    <input class="kern-input" type="text" placeholder="MM" maxlength="2" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Año</label>
+                                    <input class="kern-input" type="text" placeholder="AAAA" maxlength="4" required />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" onclick="window.location.href='paso2.html'; return false;">
+                            SIGUIENTE →
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="#">Política de Privacidad</a>
+            <a href="#">Términos y Condiciones</a>
+            <a href="#">Política de Reembolsos</a>
+            <a href="#">Contacto</a>
+        </div>
+        <p class="footer-text">© 2026 Certificado de Antecedentes S.A.S.</p>
+        <p class="footer-disclaimer">
+            Servicio privado de gestión documental. No formamos parte del Gobierno de Colombia ni de GOV.CO; actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.
+        </p>
+    </footer>
+</body>
+</html>
