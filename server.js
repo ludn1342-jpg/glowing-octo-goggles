@@ -181,7 +181,7 @@ async function resolverTokenCapSolver() {
         websiteURL: CREZCAMOS_URL,
         websiteKey: RECAPTCHA_SITEKEY,
         pageAction: 'sesion',
-        minScore: 0.7,
+        minScore: 0.9,
       };
 
       // CapSolver requiere proxy para estos task types
