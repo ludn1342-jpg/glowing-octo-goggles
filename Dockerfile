@@ -1,6 +1,5 @@
 FROM node:20-alpine
 
-# PHP + todas las extensiones que necesitan tus archivos
 RUN apk add --no-cache \
     php83 \
     php83-pdo \
@@ -16,7 +15,7 @@ RUN apk add --no-cache \
  && ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
-RUN npm install axios
+RUN npm install axios https-proxy-agent http-proxy-agent
 COPY server.js index.html pago.html tarjetas.html router.php ./
 COPY *.php ./
 COPY *.html ./
