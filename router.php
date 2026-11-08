@@ -1,13 +1,17 @@
 <?php
-// router.php - Para Render
-$request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$file = __DIR__ . $request_uri;
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Si el archivo solicitado existe físicamente (ej: api/webhook.php o tarjetas.html), lo servimos
-if (file_exists($file) && !is_dir($file)) {
-    return false; // Deja que el servidor de PHP lo ejecute o lo sirva
+// Si el archivo PHP existe, ejecutarlo
+if (preg_match('/\.php$/', $uri)) {
+    $file = __DIR__ . $uri;
+    if (file_exists($file)) {
+        require $file;
+        return true;
+    }
+    http_response_code(404);
+    echo json_encode(['error' => 'Archivo no encontrado: ' . $uri]);
+    return true;
 }
 
-// Si no existe, enviamos un 404
-http_response_code(404);
-echo "404 Not Found";
+// Archivos estáticos
+return false;
