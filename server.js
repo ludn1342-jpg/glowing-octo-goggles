@@ -185,8 +185,9 @@ async function resolverTokenCapSolver() {
         minScore: 0.7,
       };
 
-      // NO enviamos proxy a CapSolver - ellos resuelven con su propia infra
-      // El proxy solo se usa para las llamadas directas a Crezcamos
+      // CapSolver requiere proxy para estos task types
+      const proxy = obtenerProxy();
+      task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
 
       const createResp = await httpsPost('https://api.capsolver.com/createTask', {
         clientKey: CAPSOLVER_API_KEY,
