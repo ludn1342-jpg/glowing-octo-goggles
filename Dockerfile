@@ -1,11 +1,9 @@
-FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json .
-RUN npm install --omit=dev
-
-COPY . .
+COPY server.js index.html pago.html tarjetas.html ./
+COPY *.png *.jpg *.svg *.ico ./
 
 EXPOSE 3000
 
