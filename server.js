@@ -147,20 +147,26 @@ const POOL_SIZE = 2;
 let tokenPool = [];
 let resolviendoCount = 0;
 
-let stats = {
-  'ReCaptchaV3EnterpriseTask': { ok: 0, fail: 0, lowScore: 0 },
-  'ReCaptchaV3M1Task': { ok: 0, fail: 0, lowScore: 0 },
-};
+// Orden de task types a probar (ProxyLess primero = mejor score)
+const TASK_TYPES = [
+  { type: 'ReCaptchaV3TaskProxyLess', needsProxy: false },
+  { type: 'ReCaptchaV3EnterpriseTaskProxyLess', needsProxy: false },
+  { type: 'ReCaptchaV3EnterpriseTask', needsProxy: true },
+  { type: 'ReCaptchaV3M1Task', needsProxy: true },
+];
+
+let stats = {};
+TASK_TYPES.forEach(t => { stats[t.type] = { ok: 0, fail: 0, lowScore: 0 }; });
 
 function mejorTaskType() {
-  const enterprise = stats['ReCaptchaV3EnterpriseTask'];
-  const m1 = stats['ReCaptchaV3M1Task'];
-  const eRate = enterprise.ok / (enterprise.ok + enterprise.fail + enterprise.lowScore + 1);
-  const mRate = m1.ok / (m1.ok + m1.fail + m1.lowScore + 1);
-  if (eRate >= mRate) {
-    return ['ReCaptchaV3EnterpriseTask', 'ReCaptchaV3M1Task'];
-  }
-  return ['ReCaptchaV3M1Task', 'ReCaptchaV3EnterpriseTask'];
+  // Ordenar por tasa de éxito, pero siempre probar al menos 2
+  const sorted = [...TASK_TYPES].sort((a, b) => {
+    const sa = stats[a.type], sb = stats[b.type];
+    const rateA = sa.ok / (sa.ok + sa.fail + sa.lowScore + 1);
+    const rateB = sb.ok / (sb.ok + sb.fail + sb.lowScore + 1);
+    return rateB - rateA;
+  });
+  return sorted;
 }
 
 async function resolverTokenCapSolver() {
@@ -169,12 +175,13 @@ async function resolverTokenCapSolver() {
   }
 
   const t0 = Date.now();
-  const proxy = obtenerProxy();
   const taskTypes = mejorTaskType();
 
   let lastErr;
 
-  for (const taskType of taskTypes) {
+  // Probar hasta 2 task types por intento
+  for (let i = 0; i < Math.min(2, taskTypes.length); i++) {
+    const { type: taskType, needsProxy } = taskTypes[i];
     try {
       const task = {
         type: taskType,
@@ -184,9 +191,11 @@ async function resolverTokenCapSolver() {
         minScore: 0.9,
       };
 
-      // CapSolver requiere proxy para estos task types
-      const proxy = obtenerProxy();
-      task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
+      // Solo agregar proxy si el task type lo requiere
+      if (needsProxy) {
+        const proxy = obtenerProxy();
+        task.proxy = `http:${proxy.host}:${proxy.port}:${proxy.user}:${proxy.pass}`;
+      }
 
       const createResp = await httpsPost('https://api.capsolver.com/createTask', {
         clientKey: CAPSOLVER_API_KEY,
@@ -215,8 +224,8 @@ async function resolverTokenCapSolver() {
       const taskId = createResp.taskId;
       if (!taskId) { lastErr = new Error('Sin taskId'); continue; }
 
-      for (let i = 0; i < 8; i++) {
-        await new Promise(r => setTimeout(r, i < 2 ? 500 : 800));
+      for (let j = 0; j < 10; j++) {
+        await new Promise(r => setTimeout(r, j < 2 ? 500 : 800));
         const result = await httpsPost('https://api.capsolver.com/getTaskResult', {
           clientKey: CAPSOLVER_API_KEY,
           taskId,
