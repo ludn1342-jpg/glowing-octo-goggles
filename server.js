@@ -28,9 +28,13 @@ const GEONODE_PASS = process.env.GEONODE_PASS || '605d224e-19b6-4baa-8107-296ee7
 const GEONODE_HOST = 'us.proxy.geonode.io';
 const GEONODE_PORT = 9000;
 
-// ─── Agente HTTPS con proxy (túnel CONNECT correcto) ────────
+// ─── Proxy URL base ────────────────────────────────────────
 const PROXY_URL = `http://${GEONODE_USER}:${GEONODE_PASS}@${GEONODE_HOST}:${GEONODE_PORT}`;
-const proxyAgent = new HttpsProxyAgent(PROXY_URL);
+
+// Crear agente nuevo cada vez = IP residencial diferente
+function nuevoProxyAgent() {
+  return new HttpsProxyAgent(PROXY_URL);
+}
 
 function obtenerProxy() {
   return {
@@ -40,19 +44,6 @@ function obtenerProxy() {
     pass: GEONODE_PASS,
   };
 }
-
-// Instancia de axios con proxy Geonode para llamadas a Crezcamos
-// IMPORTANTE: usar httpsAgent + proxy:false (no el proxy nativo de axios)
-const axiosCrezcamos = axios.create({
-  baseURL: API_BASE,
-  timeout: 15000,
-  httpsAgent: proxyAgent,
-  proxy: false,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json, text/plain, */*',
-  },
-});
 
 // ─── Tipos de documento (UUIDs del backend) ──────────────────
 const TIPO_DOC_IDS = {
@@ -70,10 +61,18 @@ const FIREBASE_API_KEY = 'AIzaSyBXJ_5dpN6uTDr41m72dcS_ZKJtGc_dVHw';
 const FIREBASE_DB_URL = 'https://rpp-platform-mobile-app-prod-default-rtdb.firebaseio.com';
 
 // ─── API POST helper (Crezcamos) VIA PROXY GEONODE ──────────
+// Cada llamada crea un agente nuevo = IP residencial diferente
 async function apiPost(ruta, body, headers = {}) {
   try {
-    const res = await axiosCrezcamos.post(ruta, body, {
-      headers: { ...headers },
+    const res = await axios.post(`${API_BASE}${ruta}`, body, {
+      httpsAgent: nuevoProxyAgent(),
+      proxy: false,
+      timeout: 15000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
+        ...headers,
+      },
     });
     return { status: res.status, data: res.data };
   } catch (err) {
@@ -325,7 +324,7 @@ function llenarSessionPool() {
         sessionResolving--;
         console.log(`[session-pool] Error: ${err.message}`);
         if (!err.message?.includes('Saldo insuficiente')) {
-          setTimeout(llenarSessionPool, 8000);
+          setTimeout(llenarSessionPool, 15000);
         }
       });
   }
@@ -760,7 +759,7 @@ setTimeout(async () => {
   // Test 2: Conexión HTTPS a Crezcamos via proxy (túnel CONNECT)
   try {
     const testRes = await axios.get(API_BASE.replace('/pagos/api/public', ''), {
-      httpsAgent: proxyAgent,
+      httpsAgent: nuevoProxyAgent(),
       proxy: false,
       timeout: 10000,
       validateStatus: () => true,
