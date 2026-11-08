@@ -144,7 +144,7 @@ function httpsPost(urlStr, data, extraHeaders = {}) {
 // ═══════════════════════════════════════════════════════════════
 
 const TOKEN_MAX_AGE = 110000;
-const POOL_SIZE = 1;
+const POOL_SIZE = 2;
 let tokenPool = [];
 let resolviendoCount = 0;
 
@@ -217,7 +217,7 @@ async function resolverTokenCapSolver() {
       if (!taskId) { lastErr = new Error('Sin taskId'); continue; }
 
       for (let i = 0; i < 8; i++) {
-        await new Promise(r => setTimeout(r, i < 2 ? 800 : 1200));
+        await new Promise(r => setTimeout(r, i < 2 ? 500 : 800));
         const result = await httpsPost('https://api.capsolver.com/getTaskResult', {
           clientKey: CAPSOLVER_API_KEY,
           taskId,
@@ -285,13 +285,13 @@ setInterval(() => {
   if (tokenPool.length < POOL_SIZE && resolviendoCount === 0) {
     llenarPool();
   }
-}, 90000);
+}, 30000);
 
 // ═══════════════════════════════════════════════════════════════
 // POOL DE SESIONES PRE-CREADAS
 // ═══════════════════════════════════════════════════════════════
 const SESSION_MAX_AGE = 105_000;
-const SESSION_POOL_SIZE = 1;
+const SESSION_POOL_SIZE = 2;
 let sessionPool = [];
 let sessionResolving = 0;
 
@@ -780,8 +780,8 @@ server.listen(PORT, () => {
 ║  http://localhost:${PORT}                                    ║
 ║                                                           ║
 ║  ★ API Crezcamos via axios + proxy Geonode (IP Colombia) ║
-║  ★ Pool mínimo: 1 token + 1 sesión (ahorro ~80%)        ║
-║  ★ Máximo 5 tokens por consulta                          ║
+║  ★ Pool: 2 tokens + 2 sesiones pre-creadas               ║
+║  ★ Respuesta ~2-4s con sesión lista                      ║
 ║  ★ Stats: http://localhost:${PORT}/stats                     ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
