@@ -554,6 +554,24 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
+  // ─── REDIRIGIR /api/ A PHP (Apache) ───
+  if (req.url.startsWith('/api/')) {
+    const options = {
+      hostname: '127.0.0.1',
+      port: 80,
+      path: req.url,
+      method: req.method,
+      headers: req.headers,
+    };
+    const proxyReq = http.request(options, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+    req.pipe(proxyReq);
+    return;
+  }
+  // ─── FIN DEL CAMBIO ───
+
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
   // ─── Servir index.html ───
