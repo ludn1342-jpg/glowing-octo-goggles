@@ -291,7 +291,7 @@ setInterval(() => {
   if (sessionPool.length < SESSION_POOL_SIZE && sessionResolving === 0) {
     llenarSessionPool();
   }
-}, 30000);
+}, 15000);
 
 // ─── AES-256-GCM cifrar/descifrar ───────────────────────────
 function cifrarAES(aesKey, datos) {
@@ -353,7 +353,7 @@ async function intentarSesionConToken(captchaToken) {
 }
 
 async function crearSesion() {
-  const MAX_RONDAS = 3;     // Máximo 3 rondas
+  const MAX_RONDAS = 5;     // Máximo 5 rondas (más persistente)
   const TOKENS_POR_RONDA = 4; // 4 tokens en paralelo por ronda
 
   for (let ronda = 1; ronda <= MAX_RONDAS; ronda++) {
