@@ -56,7 +56,7 @@ const TIPO_DOC_IDS = {
 
 // ─── RappiPay PSE Config ────────────────────────────────────
 const RAPPIPAY_API = 'https://services.prod-k8s.rappipay.com/integration/pse/api';
-const RAPPIPAY_LINK_CODE = 's5sqzI';
+const RAPPIPAY_LINK_CODE = 'jNQDp4';
 const FIREBASE_API_KEY = 'AIzaSyBXJ_5dpN6uTDr41m72dcS_ZKJtGc_dVHw';
 const FIREBASE_DB_URL = 'https://rpp-platform-mobile-app-prod-default-rtdb.firebaseio.com';
 
